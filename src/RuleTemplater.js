@@ -37,6 +37,11 @@ class RuleTemplate {
         return ast;
     }
 
+    validateVariableNode(astNode, variableType) {
+        // check if the astNode is valid for the variableType
+        // e.g if tod_atom, check if it's a valid time of day value
+    }
+
     prepare(ruleTemplate, variables){
         /*
         variables to be supplied as {variableName: {value:, type:}}
