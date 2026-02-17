@@ -195,6 +195,7 @@ class RuleTemplate {
 
     /**
      * Prepare the template by replacing variables with their values
+     * Uses AST traversal for more robust replacement
      * @param {Object} variables - Object mapping variable names to {value, type} objects
      * @returns {string} The prepared rule string
      */
@@ -203,61 +204,104 @@ class RuleTemplate {
             throw new Error('Variables must be provided as an object');
         }
 
-        // Replace template variables in the format ${VARIABLE_NAME}
-        let result = this.ruleTemplateText;
+        // Collect all template_value nodes from the AST with their replacement values
+        const replacements = this._collectTemplateReplacements(variables);
         
-        // Match template variables like ${ACTION} or ${TIME}
-        // Supports optional filters: ${VAR|filter}
-        const templateRegex = /\$\{([A-Za-z_][A-Za-z0-9_]*?)(?:\|([^}]*))?\}/g;
+        // Replace templates in the original text
+        let result = this.ast.text || this.ruleTemplateText;
         
-        result = result.replace(templateRegex, (match, varName, filterStr) => {
-            if (!variables.hasOwnProperty(varName)) {
-                throw new Error(`Variable '${varName}' not provided in variables object`);
-            }
-            
-            const varData = variables[varName];
-            if (typeof varData !== 'object' || !varData.hasOwnProperty('value')) {
-                throw new Error(`Variable '${varName}' must be an object with 'value' property`);
-            }
-            
-            let { value, type } = varData;
-            
-            // Validate type if provided
-            if (type && !VariableTypes.includes(type)) {
-                throw new Error(`Invalid variable type '${type}' for variable '${varName}'`);
-            }
-            
-            // Apply filters if present
-            if (filterStr) {
-                const filters = filterStr.split('|').map(f => f.trim()).filter(f => f.length > 0);
-                for (const filterName of filters) {
-                    if (!TemplateFilters[filterName]) {
-                        throw new Error(`Unknown filter '${filterName}'`);
-                    }
-                    value = TemplateFilters[filterName](value);
-                }
-                // After applying filters, the result is already a string representation
-                return String(value);
-            }
-            
-            // Convert value to string representation based on type
-            if (type === 'string') {
-                // Escape backslashes first, then quotes in string values.
-                // Order is critical: escaping backslashes first prevents double-escaping.
-                // E.g., "test\" becomes "test\\" then "test\\\"" (correct)
-                // If reversed, "test\" would become "test\\"" then "test\\\\"" (incorrect)
-                return `"${String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
-            } else if (type === 'number') {
-                return String(value);
-            } else if (type === 'boolean') {
-                return value ? 'true' : 'false';
-            } else {
-                // Default behavior - just insert the value as-is
-                return String(value);
-            }
-        });
+        // Do replacements - use a stable order to avoid issues with overlapping replacements
+        // Sort by position in text (longest first to avoid substring issues)
+        const sortedReplacements = Array.from(replacements.entries())
+            .sort((a, b) => b[0].length - a[0].length);
+        
+        for (const [templateText, replacement] of sortedReplacements) {
+            result = result.replace(templateText, replacement);
+        }
         
         return result;
+    }
+
+    /**
+     * Collect all template_value nodes and compute their replacement strings
+     * @private
+     * @param {Object} variables - Object mapping variable names to {value, type} objects
+     * @returns {Map} Map from template node text to replacement string
+     */
+    _collectTemplateReplacements(variables) {
+        const replacements = new Map();
+        
+        const traverse = (node) => {
+            if (!node) return;
+            
+            if (node.type === 'template_value') {
+                const templateInfo = this._extractVariableFromNode(node);
+                if (!templateInfo) {
+                    throw new Error(`Failed to extract variable information from template node`);
+                }
+                
+                const varName = templateInfo.name;
+                
+                // Validate variable is provided
+                if (!variables.hasOwnProperty(varName)) {
+                    throw new Error(`Variable '${varName}' not provided in variables object`);
+                }
+                
+                const varData = variables[varName];
+                if (typeof varData !== 'object' || !varData.hasOwnProperty('value')) {
+                    throw new Error(`Variable '${varName}' must be an object with 'value' property`);
+                }
+                
+                let { value, type } = varData;
+                
+                // Validate type if provided
+                if (type && !VariableTypes.includes(type)) {
+                    throw new Error(`Invalid variable type '${type}' for variable '${varName}'`);
+                }
+                
+                // Apply filters if present
+                if (templateInfo.filters && templateInfo.filters.length > 0) {
+                    for (const filterName of templateInfo.filters) {
+                        if (!TemplateFilters[filterName]) {
+                            throw new Error(`Unknown filter '${filterName}'`);
+                        }
+                        value = TemplateFilters[filterName](value);
+                    }
+                    // After applying filters, the result is already a string representation
+                    replacements.set(node.text, String(value));
+                    return;
+                }
+                
+                // Convert value to string representation based on type
+                let replacement;
+                if (type === 'string') {
+                    // Escape backslashes first, then quotes in string values.
+                    // Order is critical: escaping backslashes first prevents double-escaping.
+                    // E.g., "test\" becomes "test\\" then "test\\\"" (correct)
+                    // If reversed, "test\" would become "test\\"" then "test\\\\"" (incorrect)
+                    replacement = `"${String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+                } else if (type === 'number') {
+                    replacement = String(value);
+                } else if (type === 'boolean') {
+                    replacement = value ? 'true' : 'false';
+                } else {
+                    // Default behavior - just insert the value as-is
+                    replacement = String(value);
+                }
+                
+                replacements.set(node.text, replacement);
+            }
+            
+            // Traverse children
+            if (node.children) {
+                for (const child of node.children) {
+                    traverse(child);
+                }
+            }
+        };
+        
+        traverse(this.ast);
+        return replacements;
     }
 
     /**
