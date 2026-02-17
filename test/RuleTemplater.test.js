@@ -94,6 +94,15 @@ describe('RuleTemplate', function() {
             
             expect(result).to.equal('!(EventIs(StrConcat("DeviceEvent:measurement:", "temperature")) && TimeLastTrueSet("last_measurement") || TimeLastTrueCheck("last_measurement") < 60)');
         });
+
+        it('should properly escape quotes and backslashes in string values', function() {
+            const template = 'EventIs(${EVENT})';
+            const result = RuleTemplate.prepare(template, {
+                EVENT: { value: 'test"value\\with\\slashes', type: 'string' }
+            });
+            
+            expect(result).to.equal('EventIs("test\\"value\\\\with\\\\slashes")');
+        });
     });
 
     describe('parse()', function() {
