@@ -232,7 +232,7 @@ class RuleTemplate {
                 const filters = filterStr.split('|').map(f => f.trim()).filter(f => f.length > 0);
                 for (const filterName of filters) {
                     if (!TemplateFilters[filterName]) {
-                        throw new Error(`Unknown filter '${filterName}' for variable '${varName}'`);
+                        throw new Error(`Unknown filter '${filterName}'`);
                     }
                     value = TemplateFilters[filterName](value);
                 }

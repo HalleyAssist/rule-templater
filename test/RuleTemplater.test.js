@@ -380,5 +380,34 @@ describe('RuleTemplate', function() {
             
             expect(result).to.equal('EventIs(StrConcat("prefix:", TEMPERATURE)) && Value() > 60');
         });
+
+        it('should apply default filter to empty values', function() {
+            const template = 'EventIs(${EVENT|default})';
+            const parsed = RuleTemplate.parse(template);
+            
+            // Test with empty string
+            let result = parsed.prepare({
+                EVENT: { value: '' }
+            });
+            expect(result).to.equal('EventIs()');
+            
+            // Test with null
+            result = parsed.prepare({
+                EVENT: { value: null }
+            });
+            expect(result).to.equal('EventIs()');
+            
+            // Test with undefined
+            result = parsed.prepare({
+                EVENT: { value: undefined }
+            });
+            expect(result).to.equal('EventIs()');
+            
+            // Test with actual value
+            result = parsed.prepare({
+                EVENT: { value: 'test' }
+            });
+            expect(result).to.equal('EventIs(test)');
+        });
     });
 });
