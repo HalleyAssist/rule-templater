@@ -210,13 +210,16 @@ class RuleTemplate {
         // Replace templates in the original text
         let result = this.ast.text || this.ruleTemplateText;
         
-        // Do replacements - use a stable order to avoid issues with overlapping replacements
-        // Sort by position in text (longest first to avoid substring issues)
+        // Do replacements - sort by length (longest first) to handle edge cases
+        // where one template might be a substring of another
+        // Note: Using Map means same template text only stored once, but replaceAll()
+        // will replace all occurrences
         const sortedReplacements = Array.from(replacements.entries())
             .sort((a, b) => b[0].length - a[0].length);
         
         for (const [templateText, replacement] of sortedReplacements) {
-            result = result.replace(templateText, replacement);
+            // Use replaceAll to handle multiple occurrences of the same template
+            result = result.replaceAll(templateText, replacement);
         }
         
         return result;

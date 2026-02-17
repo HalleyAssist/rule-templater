@@ -123,6 +123,16 @@ describe('RuleTemplate', function() {
             
             expect(result).to.equal('EventIs("test\\"value\\\\with\\\\slashes")');
         });
+
+        it('should handle multiple occurrences of the same variable', function() {
+            const template = 'EventIs(${ACTION}) && OtherEvent(${ACTION})';
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
+                ACTION: { value: 'test', type: 'string' }
+            });
+            
+            expect(result).to.equal('EventIs("test") && OtherEvent("test")');
+        });
     });
 
     describe('validate()', function() {
