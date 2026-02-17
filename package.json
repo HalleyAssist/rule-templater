@@ -11,14 +11,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/HalleyAssist/rule-parser.git"
+    "url": "git+https://github.com/HalleyAssist/rule-templater.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/HalleyAssist/rule-parser/issues"
+    "url": "https://github.com/HalleyAssist/rule-templater/issues"
   },
-  "homepage": "https://github.com/HalleyAssist/rule-parser#readme",
+  "homepage": "https://github.com/HalleyAssist/rule-templater#readme",
   "dependencies": {
     "@halleyassist/rule-parser": "^1.0.19",
     "ebnf": "git+https://github.com/HalleyAssist/node-ebnf.git"
