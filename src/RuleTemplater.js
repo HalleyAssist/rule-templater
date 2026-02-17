@@ -206,7 +206,8 @@ class RuleTemplate {
         let result = this.ruleTemplateText;
         
         // Match template variables like ${ACTION} or ${TIME}
-        const templateRegex = /\$\{([A-Za-z_][A-Za-z0-9_.]*?)(?:\|[^}]*)?\}/g;
+        // Supports optional filters: ${VAR|filter}
+        const templateRegex = /\$\{([A-Za-z_][A-Za-z0-9_]*?)(?:\|[^}]*)?\}/g;
         
         result = result.replace(templateRegex, (match, varName) => {
             if (!variables.hasOwnProperty(varName)) {
