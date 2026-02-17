@@ -50,24 +50,6 @@ if (valueAtomIdx !== -1) {
     extendedGrammar[valueAtomIdx].bnf.push(['template_value']);
 }
 
-// Add template_value support to BETWEEN expressions for number ranges
-const betweenNumberInnerIdx = extendedGrammar.findIndex(r => r.name === 'between_number_inner');
-if (betweenNumberInnerIdx !== -1) {
-    extendedGrammar[betweenNumberInnerIdx].bnf.push(['template_value']);
-}
-
-// Add template_value support to BETWEEN expressions for time-of-day ranges
-const betweenTodInnerIdx = extendedGrammar.findIndex(r => r.name === 'between_tod_inner');
-if (betweenTodInnerIdx !== -1) {
-    extendedGrammar[betweenTodInnerIdx].bnf.push(['template_value']);
-}
-
-// Add template_value support to BETWEEN expressions for time period ranges
-const betweenNumberTimeInnerIdx = extendedGrammar.findIndex(r => r.name === 'between_number_time_inner');
-if (betweenNumberTimeInnerIdx !== -1) {
-    extendedGrammar[betweenNumberTimeInnerIdx].bnf.push(['template_value']);
-}
-
 // Export the parser rules for potential external use
 const ParserRules = extendedGrammar;
 
