@@ -11,7 +11,7 @@ gulp.task('build-production', function(done) {
         let counter = 0;
         let replacements = {};
         
-        const ParserRules = require('./src/RuleParser.ebnf.js');
+        const TemplateRules = require('./src/RuleTemplate.ebnf.js');
         
         // Use counter-based approach instead of random strings for guaranteed uniqueness
         const originalToJSON = RegExp.prototype.toJSON;
@@ -21,7 +21,7 @@ gulp.task('build-production', function(done) {
             return placeholder;
         };
 
-        let rules = JSON.stringify(ParserRules);
+        let rules = JSON.stringify(TemplateRules);
         
         // Restore original toJSON to avoid side effects
         RegExp.prototype.toJSON = originalToJSON;
@@ -30,13 +30,13 @@ gulp.task('build-production', function(done) {
             rules = rules.replace(`"${key}"`, replacements[key].toString());
         }
 
-        fs.writeFileSync('src/RuleParser.production.ebnf.js', "module.exports="+rules);
+        fs.writeFileSync('src/RuleTemplate.production.ebnf.js', "module.exports="+rules);
 
-        const ruleParserJs = fs.readFileSync('src/RuleParser.js', 'utf8');
-        const ruleParserJsFixed = ruleParserJs
-            .replace("require('./RuleParser.ebnf.js')", 'require(\'./RuleParser.production.ebnf.js\')')
+        const ruleTemplaterJs = fs.readFileSync('src/RuleTemplater.js', 'utf8');
+        const ruleTemplaterJsFixed = ruleTemplaterJs
+            .replace("require('./RuleTemplate.ebnf')", 'require(\'./RuleTemplate.production.ebnf.js\')')
 
-        fs.writeFileSync('src/RuleParser.production.js', ruleParserJsFixed);
+        fs.writeFileSync('src/RuleTemplater.production.js', ruleTemplaterJsFixed);
         
         console.log('Production build complete');
         done();
@@ -50,18 +50,23 @@ gulp.task('build-production', function(done) {
 // Note: This task requires production files to exist. Run 'gulp build' or 'gulp build-production' first.
 gulp.task('build-browser', function() {
     // Check if production files exist
-    if (!fs.existsSync('./src/RuleParser.production.js')) {
+    if (!fs.existsSync('./src/RuleTemplater.production.js')) {
         console.error('Error: Production files not found. Run "gulp build-production" first.');
         return Promise.reject(new Error('Production files not found'));
     }
     
+    // Create a browser entry point if it doesn't exist
+    if (!fs.existsSync('./src/RuleTemplater.browser.js')) {
+        fs.writeFileSync('./src/RuleTemplater.browser.js', "module.exports = require('./RuleTemplater.production.js');");
+    }
+    
     return browserify({
-        entries: path.resolve(__dirname, 'src/RuleParser.browser.js'),
-        standalone: 'RuleParser'
+        entries: path.resolve(__dirname, 'src/RuleTemplater.browser.js'),
+        standalone: 'RuleTemplater'
     })
     .transform('unassertify')
     .bundle()
-    .pipe(source('rule-parser.browser.js'))
+    .pipe(source('rule-templater.browser.js'))
     .pipe(buffer())
     .pipe(gulp.dest('./dist'));
 });

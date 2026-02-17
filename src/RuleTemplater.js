@@ -1,4 +1,4 @@
-const RuleParser = require('@halleyassist/rule-parser'),
+const RuleParserRules = require('@halleyassist/rule-parser/src/RuleParser.ebnf'),
       TemplateGrammar = require('./RuleTemplate.ebnf'),
         {Parser} = require('ebnf');
 
@@ -17,7 +17,7 @@ const VariableTypes = [
     'object array'
 ]
 
-const extendedGrammar = [...RuleParser.ParserRules]
+const extendedGrammar = [...RuleParserRules]
 for(const rule of TemplateGrammar){
     const idx = extendedGrammar.findIndex(r => r.name === rule.name);
     if(idx !== -1){
@@ -26,6 +26,8 @@ for(const rule of TemplateGrammar){
         extendedGrammar.push(rule);
     }
 }
+
+const ParserRules = extendedGrammar;
 
 class RuleTemplate {
     static parse(ruleTemplate){
@@ -37,20 +39,108 @@ class RuleTemplate {
         return ast;
     }
 
-    validateVariableNode(astNode, variableType) {
+    static validateVariableNode(astNode, variableType) {
         // check if the astNode is valid for the variableType
         // e.g if tod_atom, check if it's a valid time of day value
+        
+        if (!astNode || !astNode.type) {
+            return false;
+        }
+
+        // Map variable types to expected AST node types
+        const typeMapping = {
+            'string': ['string_atom', 'string_concat'],
+            'number': ['number_atom', 'math_expr'],
+            'boolean': ['boolean_atom', 'boolean_expr'],
+            'time period': ['time_period_atom'],
+            'time value': ['time_value_atom', 'tod_atom'],
+            'string array': ['string_array'],
+            'number array': ['number_array'],
+            'boolean array': ['boolean_array'],
+            'object': ['object_atom'],
+            'object array': ['object_array']
+        };
+
+        const allowedTypes = typeMapping[variableType];
+        if (!allowedTypes) {
+            return false;
+        }
+
+        return allowedTypes.includes(astNode.type);
     }
 
-    prepare(ruleTemplate, variables){
+    static prepare(ruleTemplate, variables){
         /*
         variables to be supplied as {variableName: {value:, type:}}
         */
-        // return a rule string
+        
+        if (!variables || typeof variables !== 'object') {
+            throw new Error('Variables must be provided as an object');
+        }
+
+        // Replace template variables in the format ${VARIABLE_NAME}
+        let result = ruleTemplate;
+        
+        // Match template variables like ${ACTION} or ${TIME}
+        const templateRegex = /\$\{([A-Za-z_][A-Za-z0-9_]*)\}/g;
+        
+        result = result.replace(templateRegex, (match, varName) => {
+            if (!variables.hasOwnProperty(varName)) {
+                throw new Error(`Variable '${varName}' not provided in variables object`);
+            }
+            
+            const varData = variables[varName];
+            if (typeof varData !== 'object' || !varData.hasOwnProperty('value')) {
+                throw new Error(`Variable '${varName}' must be an object with 'value' property`);
+            }
+            
+            const { value, type } = varData;
+            
+            // Validate type if provided
+            if (type && !VariableTypes.includes(type)) {
+                throw new Error(`Invalid variable type '${type}' for variable '${varName}'`);
+            }
+            
+            // Convert value to string representation based on type
+            if (type === 'string') {
+                // Escape quotes in string values
+                return `"${String(value).replace(/"/g, '\\"')}"`;
+            } else if (type === 'number') {
+                return String(value);
+            } else if (type === 'boolean') {
+                return value ? 'true' : 'false';
+            } else {
+                // Default behavior - just insert the value as-is
+                return String(value);
+            }
+        });
+        
+        return result;
     }
 
-    extractVariables(ruleString){
+    static extractVariables(ruleString){
         // return a variables object
+        const variables = {};
+        
+        // Match template variables like ${ACTION} or ${TIME}
+        const templateRegex = /\$\{([A-Za-z_][A-Za-z0-9_]*)\}/g;
+        
+        let match;
+        while ((match = templateRegex.exec(ruleString)) !== null) {
+            const varName = match[1];
+            if (!variables[varName]) {
+                variables[varName] = {
+                    name: varName,
+                    positions: []
+                };
+            }
+            variables[varName].positions.push({
+                start: match.index,
+                end: match.index + match[0].length
+            });
+        }
+        
+        return variables;
     }
 }
 module.exports = RuleTemplate
