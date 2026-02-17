@@ -1,11 +1,6 @@
-export interface VariablePosition {
-    start: number;
-    end: number;
-}
-
-export interface ExtractedVariable {
+export interface VariableInfo {
     name: string;
-    positions: VariablePosition[];
+    filters: string[];
 }
 
 export interface VariableValue {
@@ -17,43 +12,59 @@ export interface Variables {
     [key: string]: VariableValue;
 }
 
-export interface ExtractedVariables {
-    [key: string]: ExtractedVariable;
+export interface ValidationResult {
+    valid: boolean;
+    errors: string[];
 }
 
 export interface ASTNode {
     type: string;
+    text?: string;
+    children?: ASTNode[];
     [key: string]: any;
 }
 
 export default class RuleTemplate {
-    /**
-     * Parse a rule template string into an AST
-     * @param ruleTemplate The rule template string to parse
-     * @returns The parsed AST
-     */
-    static parse(ruleTemplate: string): ASTNode;
+    ruleTemplateText: string;
+    ast: ASTNode;
+
+    constructor(ruleTemplateText: string, ast: ASTNode);
 
     /**
-     * Validate that an AST node matches the expected variable type
+     * Parse a rule template string and return a RuleTemplate instance
+     * @param ruleTemplate The template string to parse
+     * @returns Instance with AST and template text
+     */
+    static parse(ruleTemplate: string): RuleTemplate;
+
+    /**
+     * Extract variables from the template using the AST
+     * @returns Array of {name, filters} objects
+     */
+    extractVariables(): VariableInfo[];
+
+    /**
+     * Validate variable types against the AST
+     * @param variables Object mapping variable names to {value, type} objects
+     * @returns Object with validation results: {valid, errors}
+     */
+    validate(variables: Variables): ValidationResult;
+
+    /**
+     * Prepare the template by replacing variables with their values
+     * @param variables Object mapping variable names to {value, type} objects
+     * @returns The prepared rule string
+     */
+    prepare(variables: Variables): string;
+
+    /**
+     * Helper method to validate if an AST node matches a variable type
      * @param astNode The AST node to validate
      * @param variableType The expected variable type
-     * @returns True if the node is valid for the given type
+     * @returns True if valid, false otherwise
      */
     static validateVariableNode(astNode: ASTNode | null | undefined, variableType: string): boolean;
-
-    /**
-     * Prepare a rule template by replacing variables with their values
-     * @param ruleTemplate The template string containing ${VARIABLE} placeholders
-     * @param variables Object mapping variable names to their values and types
-     * @returns The prepared rule string with variables replaced
-     */
-    static prepare(ruleTemplate: string, variables: Variables): string;
-
-    /**
-     * Extract all variables from a rule template string
-     * @param ruleString The template string to extract variables from
-     * @returns Object containing all extracted variables with their positions
-     */
-    static extractVariables(ruleString: string): ExtractedVariables;
 }
+
+export const ParserRules: any[];
+export const VariableTypes: string[];

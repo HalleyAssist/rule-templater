@@ -2,36 +2,49 @@ const { expect } = require('chai');
 const RuleTemplate = require('../src/RuleTemplater');
 
 describe('RuleTemplate', function() {
-    describe('extractVariables()', function() {
-        it('should extract variables from a template string', function() {
+    describe('parse() and extractVariables()', function() {
+        it('should parse and extract variables from a template string', function() {
             const template = 'EventIs(${EVENT_TYPE}) && Value() > ${THRESHOLD}';
-            const variables = RuleTemplate.extractVariables(template);
+            const parsed = RuleTemplate.parse(template);
+            const variables = parsed.extractVariables();
             
-            expect(variables).to.have.property('EVENT_TYPE');
-            expect(variables).to.have.property('THRESHOLD');
-            expect(variables.EVENT_TYPE.name).to.equal('EVENT_TYPE');
-            expect(variables.THRESHOLD.name).to.equal('THRESHOLD');
+            expect(variables).to.be.an('array');
+            expect(variables).to.have.length(2);
+            
+            const eventVar = variables.find(v => v.name === 'EVENT_TYPE');
+            const thresholdVar = variables.find(v => v.name === 'THRESHOLD');
+            
+            expect(eventVar).to.exist;
+            expect(eventVar.filters).to.be.an('array');
+            expect(thresholdVar).to.exist;
+            expect(thresholdVar.filters).to.be.an('array');
         });
 
-        it('should handle multiple occurrences of the same variable', function() {
-            const template = '${VALUE} > 10 && ${VALUE} < 20';
-            const variables = RuleTemplate.extractVariables(template);
-            
-            expect(variables.VALUE.positions).to.have.length(2);
-        });
-
-        it('should return empty object for templates without variables', function() {
+        it('should handle templates without variables', function() {
             const template = 'EventIs("test") && Value() > 10';
-            const variables = RuleTemplate.extractVariables(template);
+            const parsed = RuleTemplate.parse(template);
+            const variables = parsed.extractVariables();
             
-            expect(Object.keys(variables)).to.have.length(0);
+            expect(variables).to.be.an('array');
+            expect(variables).to.have.length(0);
+        });
+
+        it('should extract filters from template variables', function() {
+            const template = 'EventIs(${EVENT_TYPE|upper}) && Value() > ${THRESHOLD}';
+            const parsed = RuleTemplate.parse(template);
+            const variables = parsed.extractVariables();
+            
+            const eventVar = variables.find(v => v.name === 'EVENT_TYPE');
+            expect(eventVar).to.exist;
+            expect(eventVar.filters).to.include('upper');
         });
     });
 
     describe('prepare()', function() {
         it('should replace string variables with quoted values', function() {
             const template = 'EventIs(${EVENT_TYPE})';
-            const result = RuleTemplate.prepare(template, {
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
                 EVENT_TYPE: { value: 'test-event', type: 'string' }
             });
             
@@ -40,7 +53,8 @@ describe('RuleTemplate', function() {
 
         it('should replace number variables with numeric values', function() {
             const template = 'Value() > ${THRESHOLD}';
-            const result = RuleTemplate.prepare(template, {
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
                 THRESHOLD: { value: 42, type: 'number' }
             });
             
@@ -49,7 +63,8 @@ describe('RuleTemplate', function() {
 
         it('should replace boolean variables', function() {
             const template = 'IsActive() == ${ENABLED}';
-            const result = RuleTemplate.prepare(template, {
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
                 ENABLED: { value: true, type: 'boolean' }
             });
             
@@ -58,7 +73,8 @@ describe('RuleTemplate', function() {
 
         it('should handle multiple variables', function() {
             const template = 'EventIs(${EVENT}) && Value() > ${MIN} && Value() < ${MAX}';
-            const result = RuleTemplate.prepare(template, {
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
                 EVENT: { value: 'sensor-update', type: 'string' },
                 MIN: { value: 10, type: 'number' },
                 MAX: { value: 100, type: 'number' }
@@ -69,17 +85,19 @@ describe('RuleTemplate', function() {
 
         it('should throw error for missing variables', function() {
             const template = 'EventIs(${EVENT_TYPE})';
+            const parsed = RuleTemplate.parse(template);
             
             expect(() => {
-                RuleTemplate.prepare(template, {});
+                parsed.prepare({});
             }).to.throw('Variable \'EVENT_TYPE\' not provided');
         });
 
         it('should throw error for invalid variable format', function() {
             const template = 'EventIs(${EVENT_TYPE})';
+            const parsed = RuleTemplate.parse(template);
             
             expect(() => {
-                RuleTemplate.prepare(template, {
+                parsed.prepare({
                     EVENT_TYPE: 'just-a-string'
                 });
             }).to.throw('must be an object with \'value\' property');
@@ -87,7 +105,8 @@ describe('RuleTemplate', function() {
 
         it('should handle the complex example from the issue', function() {
             const template = '!(EventIs(StrConcat("DeviceEvent:measurement:", ${ACTION})) && TimeLastTrueSet("last_measurement") || TimeLastTrueCheck("last_measurement") < ${TIME})';
-            const result = RuleTemplate.prepare(template, {
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
                 ACTION: { value: 'temperature', type: 'string' },
                 TIME: { value: 60, type: 'number' }
             });
@@ -97,7 +116,8 @@ describe('RuleTemplate', function() {
 
         it('should properly escape quotes and backslashes in string values', function() {
             const template = 'EventIs(${EVENT})';
-            const result = RuleTemplate.prepare(template, {
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
                 EVENT: { value: 'test"value\\with\\slashes', type: 'string' }
             });
             
@@ -105,29 +125,79 @@ describe('RuleTemplate', function() {
         });
     });
 
-    describe('parse()', function() {
-        it('should parse a prepared template successfully', function() {
-            const template = '!(EventIs(StrConcat("DeviceEvent:measurement:", ${ACTION})) && TimeLastTrueSet("last_measurement") || TimeLastTrueCheck("last_measurement") < ${TIME})';
-            const prepared = RuleTemplate.prepare(template, {
-                ACTION: { value: 'temperature', type: 'string' },
-                TIME: { value: 60, type: 'number' }
+    describe('validate()', function() {
+        it('should validate provided variables', function() {
+            const template = 'EventIs(${EVENT_TYPE}) && Value() > ${THRESHOLD}';
+            const parsed = RuleTemplate.parse(template);
+            
+            const result = parsed.validate({
+                EVENT_TYPE: { value: 'test', type: 'string' },
+                THRESHOLD: { value: 42, type: 'number' }
             });
             
-            const ast = RuleTemplate.parse(prepared);
-            expect(ast).to.have.property('type');
-            expect(ast.type).to.equal('statement_main');
+            expect(result.valid).to.be.true;
+            expect(result.errors).to.be.an('array').that.is.empty;
         });
 
-        it('should parse simple rules', function() {
-            const rule = 'EventIs("test")';
-            const ast = RuleTemplate.parse(rule);
+        it('should detect missing variables', function() {
+            const template = 'EventIs(${EVENT_TYPE}) && Value() > ${THRESHOLD}';
+            const parsed = RuleTemplate.parse(template);
             
-            expect(ast).to.have.property('type');
-            expect(ast.type).to.equal('statement_main');
+            const result = parsed.validate({
+                EVENT_TYPE: { value: 'test', type: 'string' }
+            });
+            
+            expect(result.valid).to.be.false;
+            expect(result.errors).to.have.length(1);
+            expect(result.errors[0]).to.include('THRESHOLD');
+        });
+
+        it('should detect invalid variable types', function() {
+            const template = 'EventIs(${EVENT_TYPE})';
+            const parsed = RuleTemplate.parse(template);
+            
+            const result = parsed.validate({
+                EVENT_TYPE: { value: 'test', type: 'invalid_type' }
+            });
+            
+            expect(result.valid).to.be.false;
+            expect(result.errors).to.have.length(1);
+            expect(result.errors[0]).to.include('Invalid variable type');
+        });
+
+        it('should handle templates without variables', function() {
+            const template = 'EventIs("test")';
+            const parsed = RuleTemplate.parse(template);
+            
+            const result = parsed.validate({});
+            
+            expect(result.valid).to.be.true;
+            expect(result.errors).to.be.an('array').that.is.empty;
         });
     });
 
-    describe('validateVariableNode()', function() {
+    describe('parse() - instance methods', function() {
+        it('should return a RuleTemplate instance', function() {
+            const template = 'EventIs(${EVENT_TYPE})';
+            const parsed = RuleTemplate.parse(template);
+            
+            expect(parsed).to.be.instanceOf(RuleTemplate);
+            expect(parsed).to.have.property('ruleTemplateText');
+            expect(parsed).to.have.property('ast');
+            expect(parsed.ruleTemplateText).to.equal(template);
+        });
+
+        it('should parse simple rules without variables', function() {
+            const rule = 'EventIs("test")';
+            const parsed = RuleTemplate.parse(rule);
+            
+            expect(parsed).to.be.instanceOf(RuleTemplate);
+            expect(parsed.ast).to.have.property('type');
+            expect(parsed.ast.type).to.equal('statement_main');
+        });
+    });
+
+    describe('validateVariableNode() - static helper', function() {
         it('should validate string types', function() {
             const validNode = { type: 'string_atom' };
             const result = RuleTemplate.validateVariableNode(validNode, 'string');
