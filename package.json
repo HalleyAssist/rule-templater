@@ -1,0 +1,46 @@
+{
+  "name": "@halleyassist/rule-templater",
+  "version": "0.1.0",
+  "description": "The grammar for HalleyAssist rules",
+  "main": "index.js",
+  "browser": "./dist/rule-templater.browser.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "test": "mocha",
+    "build": "gulp build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HalleyAssist/rule-parser.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/HalleyAssist/rule-parser/issues"
+  },
+  "homepage": "https://github.com/HalleyAssist/rule-parser#readme",
+  "dependencies": {
+    "ebnf": "git+https://github.com/HalleyAssist/node-ebnf.git"
+  },
+  "devDependencies": {
+    "@types/node": "^25.1.0",
+    "browserify": "^17.0.1",
+    "chai": "^4",
+    "gulp": "^5.0.1",
+    "mocha": "^10.8.2",
+    "typescript": "^5.9.3",
+    "unassertify": "^3.0.1",
+    "vinyl-buffer": "^1.0.1",
+    "vinyl-source-stream": "^2.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "files": [
+    "src/*",
+    "index.js",
+    "index.d.ts",
+    "dist/*"
+  ]
+}
