@@ -22,6 +22,11 @@ const grammar = `
     template_filter_args ::= template_filter_arg (WS* "," WS* template_filter_arg)*
 
     template_filter_arg  ::= value | template_value
+
+    number_atom          ::= number | template_value
+    number_time_atom     ::= number_time | template_value
+    tod_atom             ::= number_tod | template_value
+    dow_atom             ::= dow | template_value
 `
 
 module.exports = Grammars.W3C.getRules(grammar);

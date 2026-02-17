@@ -283,8 +283,13 @@ class RuleTemplate {
         
         let { value, type } = varData;
         
-        // Validate type if provided
-        if (type && !VariableTypes.includes(type)) {
+        // Require type property for all variables
+        if (!varData.hasOwnProperty('type')) {
+            throw new Error(`Variable '${varName}' must have a 'type' property`);
+        }
+        
+        // Validate type
+        if (!VariableTypes.includes(type)) {
             throw new Error(`Invalid variable type '${type}' for variable '${varName}'`);
         }
         

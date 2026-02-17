@@ -103,6 +103,17 @@ describe('RuleTemplate', function() {
             }).to.throw('must be an object with \'value\' property');
         });
 
+        it('should throw error when type property is missing', function() {
+            const template = 'EventIs(${EVENT_TYPE})';
+            const parsed = RuleTemplate.parse(template);
+            
+            expect(() => {
+                parsed.prepare({
+                    EVENT_TYPE: { value: 'test' }
+                });
+            }).to.throw('must have a \'type\' property');
+        });
+
         it('should handle the complex example from the issue', function() {
             const template = '!(EventIs(StrConcat("DeviceEvent:measurement:", ${ACTION})) && TimeLastTrueSet("last_measurement") || TimeLastTrueCheck("last_measurement") < ${TIME})';
             const parsed = RuleTemplate.parse(template);
@@ -243,7 +254,7 @@ describe('RuleTemplate', function() {
             const template = 'EventIs(${EVENT|string})';
             const parsed = RuleTemplate.parse(template);
             const result = parsed.prepare({
-                EVENT: { value: 'test-event' }
+                EVENT: { value: 'test-event', type: 'string' }
             });
             
             expect(result).to.equal('EventIs("test-event")');
@@ -253,7 +264,7 @@ describe('RuleTemplate', function() {
             const template = 'EventIs(${EVENT|upper})';
             const parsed = RuleTemplate.parse(template);
             const result = parsed.prepare({
-                EVENT: { value: 'test-event' }
+                EVENT: { value: 'test-event', type: 'string' }
             });
             
             expect(result).to.equal('EventIs(TEST-EVENT)');
@@ -263,7 +274,7 @@ describe('RuleTemplate', function() {
             const template = 'EventIs(${EVENT|lower})';
             const parsed = RuleTemplate.parse(template);
             const result = parsed.prepare({
-                EVENT: { value: 'TEST-EVENT' }
+                EVENT: { value: 'TEST-EVENT', type: 'string' }
             });
             
             expect(result).to.equal('EventIs(test-event)');
@@ -273,7 +284,7 @@ describe('RuleTemplate', function() {
             const template = 'EventIs(${EVENT|capitalize})';
             const parsed = RuleTemplate.parse(template);
             const result = parsed.prepare({
-                EVENT: { value: 'test event' }
+                EVENT: { value: 'test event', type: 'string' }
             });
             
             expect(result).to.equal('EventIs(Test event)');
@@ -283,7 +294,7 @@ describe('RuleTemplate', function() {
             const template = 'EventIs(${EVENT|title})';
             const parsed = RuleTemplate.parse(template);
             const result = parsed.prepare({
-                EVENT: { value: 'test event name' }
+                EVENT: { value: 'test event name', type: 'string' }
             });
             
             expect(result).to.equal('EventIs(Test Event Name)');
@@ -293,7 +304,7 @@ describe('RuleTemplate', function() {
             const template = 'EventIs(${EVENT|trim})';
             const parsed = RuleTemplate.parse(template);
             const result = parsed.prepare({
-                EVENT: { value: '  test-event  ' }
+                EVENT: { value: '  test-event  ', type: 'string' }
             });
             
             expect(result).to.equal('EventIs(test-event)');
@@ -303,7 +314,7 @@ describe('RuleTemplate', function() {
             const template = 'Value() > ${THRESHOLD|number}';
             const parsed = RuleTemplate.parse(template);
             const result = parsed.prepare({
-                THRESHOLD: { value: '42' }
+                THRESHOLD: { value: '42', type: 'string' }
             });
             
             expect(result).to.equal('Value() > 42');
@@ -313,7 +324,7 @@ describe('RuleTemplate', function() {
             const template = 'Value() > ${THRESHOLD|abs}';
             const parsed = RuleTemplate.parse(template);
             const result = parsed.prepare({
-                THRESHOLD: { value: -42 }
+                THRESHOLD: { value: -42, type: 'number' }
             });
             
             expect(result).to.equal('Value() > 42');
@@ -323,7 +334,7 @@ describe('RuleTemplate', function() {
             const template = 'Value() > ${THRESHOLD|round}';
             const parsed = RuleTemplate.parse(template);
             const result = parsed.prepare({
-                THRESHOLD: { value: 42.7 }
+                THRESHOLD: { value: 42.7, type: 'number' }
             });
             
             expect(result).to.equal('Value() > 43');
@@ -333,7 +344,7 @@ describe('RuleTemplate', function() {
             const template = 'Value() > ${THRESHOLD|floor}';
             const parsed = RuleTemplate.parse(template);
             const result = parsed.prepare({
-                THRESHOLD: { value: 42.9 }
+                THRESHOLD: { value: 42.9, type: 'number' }
             });
             
             expect(result).to.equal('Value() > 42');
@@ -343,7 +354,7 @@ describe('RuleTemplate', function() {
             const template = 'Value() > ${THRESHOLD|ceil}';
             const parsed = RuleTemplate.parse(template);
             const result = parsed.prepare({
-                THRESHOLD: { value: 42.1 }
+                THRESHOLD: { value: 42.1, type: 'number' }
             });
             
             expect(result).to.equal('Value() > 43');
@@ -353,7 +364,7 @@ describe('RuleTemplate', function() {
             const template = 'EventIs(${EVENT|trim|upper})';
             const parsed = RuleTemplate.parse(template);
             const result = parsed.prepare({
-                EVENT: { value: '  test-event  ' }
+                EVENT: { value: '  test-event  ', type: 'string' }
             });
             
             expect(result).to.equal('EventIs(TEST-EVENT)');
@@ -363,7 +374,7 @@ describe('RuleTemplate', function() {
             const template = 'EventIs(${EVENT|upper|string})';
             const parsed = RuleTemplate.parse(template);
             const result = parsed.prepare({
-                EVENT: { value: 'test' }
+                EVENT: { value: 'test', type: 'string' }
             });
             
             expect(result).to.equal('EventIs("TEST")');
@@ -375,7 +386,7 @@ describe('RuleTemplate', function() {
             
             expect(() => {
                 parsed.prepare({
-                    EVENT: { value: 'test' }
+                    EVENT: { value: 'test', type: 'string' }
                 });
             }).to.throw('Unknown filter \'unknown_filter\'');
         });
@@ -384,8 +395,8 @@ describe('RuleTemplate', function() {
             const template = 'EventIs(StrConcat("prefix:", ${ACTION|upper})) && Value() > ${TIME|abs}';
             const parsed = RuleTemplate.parse(template);
             const result = parsed.prepare({
-                ACTION: { value: 'temperature' },
-                TIME: { value: -60 }
+                ACTION: { value: 'temperature', type: 'string' },
+                TIME: { value: -60, type: 'number' }
             });
             
             expect(result).to.equal('EventIs(StrConcat("prefix:", TEMPERATURE)) && Value() > 60');
@@ -397,27 +408,332 @@ describe('RuleTemplate', function() {
             
             // Test with empty string
             let result = parsed.prepare({
-                EVENT: { value: '' }
+                EVENT: { value: '', type: 'string' }
             });
             expect(result).to.equal('EventIs()');
             
             // Test with null
             result = parsed.prepare({
-                EVENT: { value: null }
+                EVENT: { value: null, type: 'string' }
             });
             expect(result).to.equal('EventIs()');
             
             // Test with undefined
             result = parsed.prepare({
-                EVENT: { value: undefined }
+                EVENT: { value: undefined, type: 'string' }
             });
             expect(result).to.equal('EventIs()');
             
             // Test with actual value
             result = parsed.prepare({
-                EVENT: { value: 'test' }
+                EVENT: { value: 'test', type: 'string' }
             });
             expect(result).to.equal('EventIs(test)');
+        });
+    });
+
+    describe('Template locations - comprehensive testing', function() {
+        describe('Templates in BETWEEN expressions', function() {
+            it('should handle templates in BETWEEN with numbers', function() {
+                const template = 'Value() BETWEEN ${MIN} AND ${MAX}';
+                const parsed = RuleTemplate.parse(template);
+                const result = parsed.prepare({
+                    MIN: { value: 10, type: 'number' },
+                    MAX: { value: 100, type: 'number' }
+                });
+                
+                expect(result).to.equal('Value() BETWEEN 10 AND 100');
+            });
+
+            it('should handle templates in BETWEEN with dash separator', function() {
+                const template = 'Value() BETWEEN ${MIN}-${MAX}';
+                const parsed = RuleTemplate.parse(template);
+                const result = parsed.prepare({
+                    MIN: { value: 5, type: 'number' },
+                    MAX: { value: 50, type: 'number' }
+                });
+                
+                expect(result).to.equal('Value() BETWEEN 5-50');
+            });
+
+            it('should handle templates in BETWEEN with time-of-day', function() {
+                const template = 'BETWEEN ${START} AND ${END}';
+                const parsed = RuleTemplate.parse(template);
+                const result = parsed.prepare({
+                    START: { value: '10:00', type: 'string' },
+                    END: { value: '18:00', type: 'string' }
+                });
+                
+                expect(result).to.equal('BETWEEN "10:00" AND "18:00"');
+            });
+        });
+
+        describe('Templates in IN expressions', function() {
+            it('should handle templates in IN clause with single value', function() {
+                const template = 'Value() IN (${VAL})';
+                const parsed = RuleTemplate.parse(template);
+                const result = parsed.prepare({
+                    VAL: { value: 'test', type: 'string' }
+                });
+                
+                expect(result).to.equal('Value() IN ("test")');
+            });
+
+            it('should handle templates in IN clause with multiple values', function() {
+                const template = 'Value() IN (${VAL1}, ${VAL2}, ${VAL3})';
+                const parsed = RuleTemplate.parse(template);
+                const result = parsed.prepare({
+                    VAL1: { value: 'first', type: 'string' },
+                    VAL2: { value: 'second', type: 'string' },
+                    VAL3: { value: 'third', type: 'string' }
+                });
+                
+                expect(result).to.equal('Value() IN ("first", "second", "third")');
+            });
+
+            it('should handle numeric templates in IN clause', function() {
+                const template = 'Value() IN (${NUM1}, ${NUM2}, ${NUM3})';
+                const parsed = RuleTemplate.parse(template);
+                const result = parsed.prepare({
+                    NUM1: { value: 1, type: 'number' },
+                    NUM2: { value: 2, type: 'number' },
+                    NUM3: { value: 3, type: 'number' }
+                });
+                
+                expect(result).to.equal('Value() IN (1, 2, 3)');
+            });
+        });
+
+        describe('Templates in function arguments', function() {
+            it('should handle templates as function arguments', function() {
+                const template = 'EventIs(${EVENT})';
+                const parsed = RuleTemplate.parse(template);
+                const result = parsed.prepare({
+                    EVENT: { value: 'sensor-update', type: 'string' }
+                });
+                
+                expect(result).to.equal('EventIs("sensor-update")');
+            });
+
+            it('should handle multiple template arguments', function() {
+                const template = 'StrConcat(${PREFIX}, ${MIDDLE}, ${SUFFIX})';
+                const parsed = RuleTemplate.parse(template);
+                const result = parsed.prepare({
+                    PREFIX: { value: 'start', type: 'string' },
+                    MIDDLE: { value: 'middle', type: 'string' },
+                    SUFFIX: { value: 'end', type: 'string' }
+                });
+                
+                expect(result).to.equal('StrConcat("start", "middle", "end")');
+            });
+
+            it('should handle mixed types in function arguments', function() {
+                const template = 'SomeFunc(${STR}, ${NUM}, ${BOOL})';
+                const parsed = RuleTemplate.parse(template);
+                const result = parsed.prepare({
+                    STR: { value: 'text', type: 'string' },
+                    NUM: { value: 42, type: 'number' },
+                    BOOL: { value: true, type: 'boolean' }
+                });
+                
+                expect(result).to.equal('SomeFunc("text", 42, true)');
+            });
+
+            it('should handle nested function calls with templates', function() {
+                const template = 'EventIs(StrConcat(${PREFIX}, ${SUFFIX}))';
+                const parsed = RuleTemplate.parse(template);
+                const result = parsed.prepare({
+                    PREFIX: { value: 'Device:', type: 'string' },
+                    SUFFIX: { value: 'Update', type: 'string' }
+                });
+                
+                expect(result).to.equal('EventIs(StrConcat("Device:", "Update"))');
+            });
+        });
+
+        describe('Templates in array contexts', function() {
+            it('should handle templates in string arrays', function() {
+                const template = 'Value() IN ([${VAL1}, ${VAL2}])';
+                const parsed = RuleTemplate.parse(template);
+                const result = parsed.prepare({
+                    VAL1: { value: 'option1', type: 'string' },
+                    VAL2: { value: 'option2', type: 'string' }
+                });
+                
+                expect(result).to.equal('Value() IN (["option1", "option2"])');
+            });
+
+            it('should handle templates in number arrays', function() {
+                const template = 'Value() IN ([${NUM1}, ${NUM2}, ${NUM3}])';
+                const parsed = RuleTemplate.parse(template);
+                const result = parsed.prepare({
+                    NUM1: { value: 10, type: 'number' },
+                    NUM2: { value: 20, type: 'number' },
+                    NUM3: { value: 30, type: 'number' }
+                });
+                
+                expect(result).to.equal('Value() IN ([10, 20, 30])');
+            });
+        });
+
+        describe('Templates in comparison operators', function() {
+            it('should handle templates with greater than operator', function() {
+                const template = 'Value() > ${THRESHOLD}';
+                const parsed = RuleTemplate.parse(template);
+                const result = parsed.prepare({
+                    THRESHOLD: { value: 50, type: 'number' }
+                });
+                
+                expect(result).to.equal('Value() > 50');
+            });
+
+            it('should handle templates with less than operator', function() {
+                const template = 'Value() < ${LIMIT}';
+                const parsed = RuleTemplate.parse(template);
+                const result = parsed.prepare({
+                    LIMIT: { value: 100, type: 'number' }
+                });
+                
+                expect(result).to.equal('Value() < 100');
+            });
+
+            it('should handle templates with equality operator', function() {
+                const template = 'Value() == ${EXPECTED}';
+                const parsed = RuleTemplate.parse(template);
+                const result = parsed.prepare({
+                    EXPECTED: { value: 'target', type: 'string' }
+                });
+                
+                expect(result).to.equal('Value() == "target"');
+            });
+
+            it('should handle templates with not equal operator', function() {
+                const template = 'Value() != ${EXCLUDED}';
+                const parsed = RuleTemplate.parse(template);
+                const result = parsed.prepare({
+                    EXCLUDED: { value: 'unwanted', type: 'string' }
+                });
+                
+                expect(result).to.equal('Value() != "unwanted"');
+            });
+        });
+
+        describe('Templates in logical expressions', function() {
+            it('should handle templates in AND expressions', function() {
+                const template = 'EventIs(${EVENT1}) && EventIs(${EVENT2})';
+                const parsed = RuleTemplate.parse(template);
+                const result = parsed.prepare({
+                    EVENT1: { value: 'first', type: 'string' },
+                    EVENT2: { value: 'second', type: 'string' }
+                });
+                
+                expect(result).to.equal('EventIs("first") && EventIs("second")');
+            });
+
+            it('should handle templates in OR expressions', function() {
+                const template = 'EventIs(${EVENT1}) || EventIs(${EVENT2})';
+                const parsed = RuleTemplate.parse(template);
+                const result = parsed.prepare({
+                    EVENT1: { value: 'first', type: 'string' },
+                    EVENT2: { value: 'second', type: 'string' }
+                });
+                
+                expect(result).to.equal('EventIs("first") || EventIs("second")');
+            });
+
+            it('should handle templates in NOT expressions', function() {
+                const template = '!EventIs(${EVENT})';
+                const parsed = RuleTemplate.parse(template);
+                const result = parsed.prepare({
+                    EVENT: { value: 'unwanted', type: 'string' }
+                });
+                
+                expect(result).to.equal('!EventIs("unwanted")');
+            });
+
+            it('should handle complex logical expressions with templates', function() {
+                const template = '(EventIs(${E1}) || EventIs(${E2})) && Value() > ${MIN}';
+                const parsed = RuleTemplate.parse(template);
+                const result = parsed.prepare({
+                    E1: { value: 'type1', type: 'string' },
+                    E2: { value: 'type2', type: 'string' },
+                    MIN: { value: 10, type: 'number' }
+                });
+                
+                expect(result).to.equal('(EventIs("type1") || EventIs("type2")) && Value() > 10');
+            });
+        });
+
+        describe('Templates with string concatenation', function() {
+            it('should handle templates in StrConcat function', function() {
+                const template = 'EventIs(StrConcat("prefix:", ${SUFFIX}))';
+                const parsed = RuleTemplate.parse(template);
+                const result = parsed.prepare({
+                    SUFFIX: { value: 'event', type: 'string' }
+                });
+                
+                expect(result).to.equal('EventIs(StrConcat("prefix:", "event"))');
+            });
+
+            it('should handle multiple templates in StrConcat', function() {
+                const template = 'EventIs(StrConcat(${PREFIX}, ":", ${SUFFIX}))';
+                const parsed = RuleTemplate.parse(template);
+                const result = parsed.prepare({
+                    PREFIX: { value: 'Device', type: 'string' },
+                    SUFFIX: { value: 'Update', type: 'string' }
+                });
+                
+                expect(result).to.equal('EventIs(StrConcat("Device", ":", "Update"))');
+            });
+        });
+
+        describe('Type validation for template locations', function() {
+            it('should enforce type requirement in BETWEEN expressions', function() {
+                const template = 'Value() BETWEEN ${MIN} AND ${MAX}';
+                const parsed = RuleTemplate.parse(template);
+                
+                expect(() => {
+                    parsed.prepare({
+                        MIN: { value: 10 },  // Missing type
+                        MAX: { value: 100, type: 'number' }
+                    });
+                }).to.throw('must have a \'type\' property');
+            });
+
+            it('should enforce type requirement in IN expressions', function() {
+                const template = 'Value() IN (${VAL1}, ${VAL2})';
+                const parsed = RuleTemplate.parse(template);
+                
+                expect(() => {
+                    parsed.prepare({
+                        VAL1: { value: 'first', type: 'string' },
+                        VAL2: { value: 'second' }  // Missing type
+                    });
+                }).to.throw('must have a \'type\' property');
+            });
+
+            it('should enforce type requirement in function arguments', function() {
+                const template = 'EventIs(${EVENT})';
+                const parsed = RuleTemplate.parse(template);
+                
+                expect(() => {
+                    parsed.prepare({
+                        EVENT: { value: 'test' }  // Missing type
+                    });
+                }).to.throw('must have a \'type\' property');
+            });
+
+            it('should enforce type requirement in nested contexts', function() {
+                const template = 'EventIs(StrConcat(${PREFIX}, ${SUFFIX}))';
+                const parsed = RuleTemplate.parse(template);
+                
+                expect(() => {
+                    parsed.prepare({
+                        PREFIX: { value: 'start', type: 'string' },
+                        SUFFIX: { value: 'end' }  // Missing type
+                    });
+                }).to.throw('must have a \'type\' property');
+            });
         });
     });
 });
