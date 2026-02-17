@@ -2,6 +2,7 @@
 // This creates coupling to the internal structure of @halleyassist/rule-parser.
 const RuleParserRules = require('@halleyassist/rule-parser/src/RuleParser.ebnf'),
       TemplateGrammar = require('./RuleTemplate.ebnf'),
+      TemplateFilters = require('./TemplateFilters'),
         {Parser} = require('ebnf');
 
 let ParserCache = null;
@@ -207,9 +208,9 @@ class RuleTemplate {
         
         // Match template variables like ${ACTION} or ${TIME}
         // Supports optional filters: ${VAR|filter}
-        const templateRegex = /\$\{([A-Za-z_][A-Za-z0-9_]*?)(?:\|[^}]*)?\}/g;
+        const templateRegex = /\$\{([A-Za-z_][A-Za-z0-9_]*?)(?:\|([^}]*))?\}/g;
         
-        result = result.replace(templateRegex, (match, varName) => {
+        result = result.replace(templateRegex, (match, varName, filterStr) => {
             if (!variables.hasOwnProperty(varName)) {
                 throw new Error(`Variable '${varName}' not provided in variables object`);
             }
@@ -219,11 +220,24 @@ class RuleTemplate {
                 throw new Error(`Variable '${varName}' must be an object with 'value' property`);
             }
             
-            const { value, type } = varData;
+            let { value, type } = varData;
             
             // Validate type if provided
             if (type && !VariableTypes.includes(type)) {
                 throw new Error(`Invalid variable type '${type}' for variable '${varName}'`);
+            }
+            
+            // Apply filters if present
+            if (filterStr) {
+                const filters = filterStr.split('|').map(f => f.trim()).filter(f => f.length > 0);
+                for (const filterName of filters) {
+                    if (!TemplateFilters[filterName]) {
+                        throw new Error(`Unknown filter '${filterName}' for variable '${varName}'`);
+                    }
+                    value = TemplateFilters[filterName](value);
+                }
+                // After applying filters, the result is already a string representation
+                return String(value);
             }
             
             // Convert value to string representation based on type
@@ -270,3 +284,4 @@ class RuleTemplate {
 module.exports = RuleTemplate;
 module.exports.ParserRules = ParserRules;
 module.exports.VariableTypes = VariableTypes;
+module.exports.TemplateFilters = TemplateFilters;

@@ -24,6 +24,25 @@ export interface ASTNode {
     [key: string]: any;
 }
 
+export type FilterFunction = (value: any) => any;
+
+export interface TemplateFiltersType {
+    string: FilterFunction;
+    upper: FilterFunction;
+    lower: FilterFunction;
+    capitalize: FilterFunction;
+    title: FilterFunction;
+    trim: FilterFunction;
+    number: FilterFunction;
+    boolean: FilterFunction;
+    abs: FilterFunction;
+    round: FilterFunction;
+    floor: FilterFunction;
+    ceil: FilterFunction;
+    default: FilterFunction;
+    [key: string]: FilterFunction;
+}
+
 export default class RuleTemplate {
     ruleTemplateText: string;
     ast: ASTNode;
@@ -52,6 +71,7 @@ export default class RuleTemplate {
 
     /**
      * Prepare the template by replacing variables with their values
+     * Applies any filters specified in the template (e.g., ${var|upper|trim})
      * @param variables Object mapping variable names to {value, type} objects
      * @returns The prepared rule string
      */
@@ -68,3 +88,4 @@ export default class RuleTemplate {
 
 export const ParserRules: any[];
 export const VariableTypes: string[];
+export const TemplateFilters: TemplateFiltersType;

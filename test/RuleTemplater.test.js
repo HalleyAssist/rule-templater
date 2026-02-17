@@ -227,4 +227,158 @@ describe('RuleTemplate', function() {
             expect(RuleTemplate.validateVariableNode(undefined, 'string')).to.be.false;
         });
     });
+
+    describe('Template filters', function() {
+        it('should apply string filter', function() {
+            const template = 'EventIs(${EVENT|string})';
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
+                EVENT: { value: 'test-event' }
+            });
+            
+            expect(result).to.equal('EventIs("test-event")');
+        });
+
+        it('should apply upper filter', function() {
+            const template = 'EventIs(${EVENT|upper})';
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
+                EVENT: { value: 'test-event' }
+            });
+            
+            expect(result).to.equal('EventIs(TEST-EVENT)');
+        });
+
+        it('should apply lower filter', function() {
+            const template = 'EventIs(${EVENT|lower})';
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
+                EVENT: { value: 'TEST-EVENT' }
+            });
+            
+            expect(result).to.equal('EventIs(test-event)');
+        });
+
+        it('should apply capitalize filter', function() {
+            const template = 'EventIs(${EVENT|capitalize})';
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
+                EVENT: { value: 'test event' }
+            });
+            
+            expect(result).to.equal('EventIs(Test event)');
+        });
+
+        it('should apply title filter', function() {
+            const template = 'EventIs(${EVENT|title})';
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
+                EVENT: { value: 'test event name' }
+            });
+            
+            expect(result).to.equal('EventIs(Test Event Name)');
+        });
+
+        it('should apply trim filter', function() {
+            const template = 'EventIs(${EVENT|trim})';
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
+                EVENT: { value: '  test-event  ' }
+            });
+            
+            expect(result).to.equal('EventIs(test-event)');
+        });
+
+        it('should apply number filter', function() {
+            const template = 'Value() > ${THRESHOLD|number}';
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
+                THRESHOLD: { value: '42' }
+            });
+            
+            expect(result).to.equal('Value() > 42');
+        });
+
+        it('should apply abs filter', function() {
+            const template = 'Value() > ${THRESHOLD|abs}';
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
+                THRESHOLD: { value: -42 }
+            });
+            
+            expect(result).to.equal('Value() > 42');
+        });
+
+        it('should apply round filter', function() {
+            const template = 'Value() > ${THRESHOLD|round}';
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
+                THRESHOLD: { value: 42.7 }
+            });
+            
+            expect(result).to.equal('Value() > 43');
+        });
+
+        it('should apply floor filter', function() {
+            const template = 'Value() > ${THRESHOLD|floor}';
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
+                THRESHOLD: { value: 42.9 }
+            });
+            
+            expect(result).to.equal('Value() > 42');
+        });
+
+        it('should apply ceil filter', function() {
+            const template = 'Value() > ${THRESHOLD|ceil}';
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
+                THRESHOLD: { value: 42.1 }
+            });
+            
+            expect(result).to.equal('Value() > 43');
+        });
+
+        it('should apply multiple filters in sequence', function() {
+            const template = 'EventIs(${EVENT|trim|upper})';
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
+                EVENT: { value: '  test-event  ' }
+            });
+            
+            expect(result).to.equal('EventIs(TEST-EVENT)');
+        });
+
+        it('should combine filters with type conversion', function() {
+            const template = 'EventIs(${EVENT|upper|string})';
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
+                EVENT: { value: 'test' }
+            });
+            
+            expect(result).to.equal('EventIs("TEST")');
+        });
+
+        it('should throw error for unknown filter', function() {
+            const template = 'EventIs(${EVENT|unknown_filter})';
+            const parsed = RuleTemplate.parse(template);
+            
+            expect(() => {
+                parsed.prepare({
+                    EVENT: { value: 'test' }
+                });
+            }).to.throw('Unknown filter \'unknown_filter\'');
+        });
+
+        it('should work with filters in complex expressions', function() {
+            const template = 'EventIs(StrConcat("prefix:", ${ACTION|upper})) && Value() > ${TIME|abs}';
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
+                ACTION: { value: 'temperature' },
+                TIME: { value: -60 }
+            });
+            
+            expect(result).to.equal('EventIs(StrConcat("prefix:", TEMPERATURE)) && Value() > 60');
+        });
+    });
 });
