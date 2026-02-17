@@ -195,6 +195,7 @@ class RuleTemplate {
 
     /**
      * Prepare the template by replacing variables with their values
+     * Rebuilds from AST by iterating through children
      * @param {Object} variables - Object mapping variable names to {value, type} objects
      * @returns {string} The prepared rule string
      */
@@ -203,61 +204,117 @@ class RuleTemplate {
             throw new Error('Variables must be provided as an object');
         }
 
-        // Replace template variables in the format ${VARIABLE_NAME}
-        let result = this.ruleTemplateText;
+        // Rebuild the rule string from AST
+        return this._rebuildFromAST(this.ast, variables);
+    }
+
+    /**
+     * Rebuild rule string from AST node, replacing template_value nodes with variable values
+     * @private
+     * @param {Object} node - AST node
+     * @param {Object} variables - Object mapping variable names to {value, type} objects
+     * @returns {string} Rebuilt string
+     */
+    _rebuildFromAST(node, variables) {
+        if (!node) return '';
         
-        // Match template variables like ${ACTION} or ${TIME}
-        // Supports optional filters: ${VAR|filter}
-        const templateRegex = /\$\{([A-Za-z_][A-Za-z0-9_]*?)(?:\|([^}]*))?\}/g;
+        // If this is a template_value node, replace it with the computed value
+        if (node.type === 'template_value') {
+            return this._computeTemplateReplacement(node, variables);
+        }
         
-        result = result.replace(templateRegex, (match, varName, filterStr) => {
-            if (!variables.hasOwnProperty(varName)) {
-                throw new Error(`Variable '${varName}' not provided in variables object`);
+        // If node has no children, it's a leaf - return its text
+        if (!node.children || node.children.length === 0) {
+            return node.text || '';
+        }
+        
+        // Node has children - rebuild by iterating through children and preserving gaps
+        let result = '';
+        const originalText = node.text || '';
+        let lastEnd = node.start || 0;
+        
+        for (const child of node.children) {
+            // Add any text between the last child's end and this child's start (gaps/syntax)
+            if (child.start !== undefined && child.start > lastEnd) {
+                result += originalText.substring(lastEnd - (node.start || 0), child.start - (node.start || 0));
             }
             
-            const varData = variables[varName];
-            if (typeof varData !== 'object' || !varData.hasOwnProperty('value')) {
-                throw new Error(`Variable '${varName}' must be an object with 'value' property`);
-            }
+            // Add the child's rebuilt text
+            result += this._rebuildFromAST(child, variables);
             
-            let { value, type } = varData;
-            
-            // Validate type if provided
-            if (type && !VariableTypes.includes(type)) {
-                throw new Error(`Invalid variable type '${type}' for variable '${varName}'`);
+            // Update lastEnd to this child's end position
+            if (child.end !== undefined) {
+                lastEnd = child.end;
             }
-            
-            // Apply filters if present
-            if (filterStr) {
-                const filters = filterStr.split('|').map(f => f.trim()).filter(f => f.length > 0);
-                for (const filterName of filters) {
-                    if (!TemplateFilters[filterName]) {
-                        throw new Error(`Unknown filter '${filterName}'`);
-                    }
-                    value = TemplateFilters[filterName](value);
-                }
-                // After applying filters, the result is already a string representation
-                return String(value);
-            }
-            
-            // Convert value to string representation based on type
-            if (type === 'string') {
-                // Escape backslashes first, then quotes in string values.
-                // Order is critical: escaping backslashes first prevents double-escaping.
-                // E.g., "test\" becomes "test\\" then "test\\\"" (correct)
-                // If reversed, "test\" would become "test\\"" then "test\\\\"" (incorrect)
-                return `"${String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
-            } else if (type === 'number') {
-                return String(value);
-            } else if (type === 'boolean') {
-                return value ? 'true' : 'false';
-            } else {
-                // Default behavior - just insert the value as-is
-                return String(value);
-            }
-        });
+        }
+        
+        // Add any remaining text after the last child
+        if (node.end !== undefined && lastEnd < node.end) {
+            result += originalText.substring(lastEnd - (node.start || 0), node.end - (node.start || 0));
+        }
         
         return result;
+    }
+
+    /**
+     * Compute the replacement value for a template_value node
+     * @private
+     * @param {Object} node - template_value AST node
+     * @param {Object} variables - Object mapping variable names to {value, type} objects
+     * @returns {string} Replacement string
+     */
+    _computeTemplateReplacement(node, variables) {
+        const templateInfo = this._extractVariableFromNode(node);
+        if (!templateInfo) {
+            throw new Error(`Failed to extract variable information from template node`);
+        }
+        
+        const varName = templateInfo.name;
+        
+        // Validate variable is provided
+        if (!variables.hasOwnProperty(varName)) {
+            throw new Error(`Variable '${varName}' not provided in variables object`);
+        }
+        
+        const varData = variables[varName];
+        if (typeof varData !== 'object' || !varData.hasOwnProperty('value')) {
+            throw new Error(`Variable '${varName}' must be an object with 'value' property`);
+        }
+        
+        let { value, type } = varData;
+        
+        // Validate type if provided
+        if (type && !VariableTypes.includes(type)) {
+            throw new Error(`Invalid variable type '${type}' for variable '${varName}'`);
+        }
+        
+        // Apply filters if present
+        if (templateInfo.filters && templateInfo.filters.length > 0) {
+            for (const filterName of templateInfo.filters) {
+                if (!TemplateFilters[filterName]) {
+                    throw new Error(`Unknown filter '${filterName}'`);
+                }
+                value = TemplateFilters[filterName](value);
+            }
+            // After applying filters, the result is already a string representation
+            return String(value);
+        }
+        
+        // Convert value to string representation based on type
+        if (type === 'string') {
+            // Escape backslashes first, then quotes in string values.
+            // Order is critical: escaping backslashes first prevents double-escaping.
+            // E.g., "test\" becomes "test\\" then "test\\\"" (correct)
+            // If reversed, "test\" would become "test\\"" then "test\\\\"" (incorrect)
+            return `"${String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+        } else if (type === 'number') {
+            return String(value);
+        } else if (type === 'boolean') {
+            return value ? 'true' : 'false';
+        } else {
+            // Default behavior - just insert the value as-is
+            return String(value);
+        }
     }
 
     /**
