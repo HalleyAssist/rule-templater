@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/HalleyAssist/rule-parser#readme",
   "dependencies": {
+    "@halleyassist/rule-parser": "^1.0.19",
     "ebnf": "git+https://github.com/HalleyAssist/node-ebnf.git"
   },
   "devDependencies": {
