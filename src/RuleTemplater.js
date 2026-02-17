@@ -137,31 +137,6 @@ class RuleTemplate {
     }
 
     /**
-     * Collect IDENT tokens from a node
-     * @private
-     */
-    _collectIdentTokens(node) {
-        const idents = [];
-        
-        const traverse = (n) => {
-            if (!n) return;
-            
-            if (n.type === 'IDENT' && n.text) {
-                idents.push(n.text);
-            }
-            
-            if (n.children) {
-                for (const child of n.children) {
-                    traverse(child);
-                }
-            }
-        };
-        
-        traverse(node);
-        return idents;
-    }
-
-    /**
      * Extract filter name from template_filter_call node
      * @private
      */
@@ -231,7 +206,8 @@ class RuleTemplate {
         let result = this.ruleTemplateText;
         
         // Match template variables like ${ACTION} or ${TIME}
-        const templateRegex = /\$\{([A-Za-z_][A-Za-z0-9_.]*?)(?:\|[^}]*)?\}/g;
+        // Supports optional filters: ${VAR|filter}
+        const templateRegex = /\$\{([A-Za-z_][A-Za-z0-9_]*?)(?:\|[^}]*)?\}/g;
         
         result = result.replace(templateRegex, (match, varName) => {
             if (!variables.hasOwnProperty(varName)) {
