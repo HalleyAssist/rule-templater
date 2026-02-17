@@ -19,8 +19,22 @@ const VariableTypes = [
     'object array'
 ]
 
+
+const AllowedTypeMapping = {
+    'string': ['string_atom', 'string_concat'],
+    'number': ['number_atom', 'math_expr'],
+    'boolean': ['boolean_atom', 'boolean_expr'],
+    'time period': ['time_period_atom'],
+    'time value': ['time_value_atom', 'tod_atom'],
+    'string array': ['string_array'],
+    'number array': ['number_array'],
+    'boolean array': ['boolean_array'],
+    'object': ['object_atom'],
+    'object array': ['object_array']
+};
+
 // Merge the base grammar with template-specific grammar rules
-const extendedGrammar = [...RuleParser.Rules]
+const extendedGrammar = [...RuleParser.ParserRules]
 for(const rule of TemplateGrammar){
     const idx = extendedGrammar.findIndex(r => r.name === rule.name);
     if(idx !== -1){
@@ -52,20 +66,7 @@ class RuleTemplate {
         }
 
         // Map variable types to expected AST node types
-        const typeMapping = {
-            'string': ['string_atom', 'string_concat'],
-            'number': ['number_atom', 'math_expr'],
-            'boolean': ['boolean_atom', 'boolean_expr'],
-            'time period': ['time_period_atom'],
-            'time value': ['time_value_atom', 'tod_atom'],
-            'string array': ['string_array'],
-            'number array': ['number_array'],
-            'boolean array': ['boolean_array'],
-            'object': ['object_atom'],
-            'object array': ['object_array']
-        };
-
-        const allowedTypes = typeMapping[variableType];
+        const allowedTypes = AllowedTypeMapping[variableType];
         if (!allowedTypes) {
             return false;
         }
