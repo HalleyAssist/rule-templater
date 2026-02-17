@@ -1,7 +1,6 @@
 // Note: We import the internal RuleParser.ebnf to extend the grammar with template rules.
 // This creates coupling to the internal structure of @halleyassist/rule-parser.
-// TODO: Consider requesting that the parser package exports ParserRules in its public API.
-const RuleParserRules = require('@halleyassist/rule-parser/src/RuleParser.ebnf'),
+const RuleParser = require('@halleyassist/rule-parser'),
       TemplateGrammar = require('./RuleTemplate.ebnf'),
         {Parser} = require('ebnf');
 
@@ -21,7 +20,7 @@ const VariableTypes = [
 ]
 
 // Merge the base grammar with template-specific grammar rules
-const extendedGrammar = [...RuleParserRules]
+const extendedGrammar = [...RuleParser.Rules]
 for(const rule of TemplateGrammar){
     const idx = extendedGrammar.findIndex(r => r.name === rule.name);
     if(idx !== -1){
