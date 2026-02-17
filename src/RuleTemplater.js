@@ -207,8 +207,11 @@ class RuleTemplate {
         // Collect all template_value nodes from the AST with their replacement values
         const replacements = this._collectTemplateReplacements(variables);
         
-        // Replace templates in the original text
-        let result = this.ast.text || this.ruleTemplateText;
+        // Replace templates in the AST's text
+        // Note: this is safe because the parser ensures templates only appear in valid
+        // positions (value_atom). Templates inside string literals are not parsed as
+        // template_value nodes, so they won't be replaced.
+        let result = this.ast.text;
         
         // Do replacements - sort by length (longest first) to handle edge cases
         // where one template might be a substring of another
