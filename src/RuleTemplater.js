@@ -50,6 +50,24 @@ if (valueAtomIdx !== -1) {
     extendedGrammar[valueAtomIdx].bnf.push(['template_value']);
 }
 
+// Add template_value support to BETWEEN expressions for number ranges
+const betweenNumberInnerIdx = extendedGrammar.findIndex(r => r.name === 'between_number_inner');
+if (betweenNumberInnerIdx !== -1) {
+    extendedGrammar[betweenNumberInnerIdx].bnf.push(['template_value']);
+}
+
+// Add template_value support to BETWEEN expressions for time-of-day ranges
+const betweenTodInnerIdx = extendedGrammar.findIndex(r => r.name === 'between_tod_inner');
+if (betweenTodInnerIdx !== -1) {
+    extendedGrammar[betweenTodInnerIdx].bnf.push(['template_value']);
+}
+
+// Add template_value support to BETWEEN expressions for time period ranges
+const betweenNumberTimeInnerIdx = extendedGrammar.findIndex(r => r.name === 'between_number_time_inner');
+if (betweenNumberTimeInnerIdx !== -1) {
+    extendedGrammar[betweenNumberTimeInnerIdx].bnf.push(['template_value']);
+}
+
 // Export the parser rules for potential external use
 const ParserRules = extendedGrammar;
 
@@ -283,8 +301,13 @@ class RuleTemplate {
         
         let { value, type } = varData;
         
-        // Validate type if provided
-        if (type && !VariableTypes.includes(type)) {
+        // Require type property for all variables
+        if (!varData.hasOwnProperty('type')) {
+            throw new Error(`Variable '${varName}' must have a 'type' property`);
+        }
+        
+        // Validate type
+        if (!VariableTypes.includes(type)) {
             throw new Error(`Invalid variable type '${type}' for variable '${varName}'`);
         }
         
