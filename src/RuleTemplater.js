@@ -108,8 +108,11 @@ class RuleTemplate {
             
             // Convert value to string representation based on type
             if (type === 'string') {
-                // Escape quotes in string values
-                return `"${String(value).replace(/"/g, '\\"')}"`;
+                // Escape backslashes first, then quotes in string values.
+                // Order is critical: escaping backslashes first prevents double-escaping.
+                // E.g., "test\" becomes "test\\" then "test\\\"" (correct)
+                // If reversed, "test\" would become "test\\"" then "test\\\\"" (incorrect)
+                return `"${String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
             } else if (type === 'number') {
                 return String(value);
             } else if (type === 'boolean') {
