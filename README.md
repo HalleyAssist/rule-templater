@@ -27,8 +27,8 @@ const parsed = RuleTemplate.parse(template);
 const variables = parsed.extractVariables();
 console.log(variables);
 // [
-//   { name: 'EVENT_TYPE', filters: [] },
-//   { name: 'THRESHOLD', filters: [] }
+//   { name: 'EVENT_TYPE', filters: [], positions: [{ start: 8, end: 21 }] },
+//   { name: 'THRESHOLD', filters: [], positions: [{ start: 36, end: 48 }] }
 // ]
 
 // Validate that variables are provided correctly
@@ -57,8 +57,8 @@ const parsed = RuleTemplate.parse(template);
 // Extract variables
 const variables = parsed.extractVariables();
 // [
-//   { name: 'ACTION', filters: [] },
-//   { name: 'TIME', filters: [] }
+//   { name: 'ACTION', filters: [], positions: [{ start: 48, end: 57 }] },
+//   { name: 'TIME', filters: [], positions: [{ start: 142, end: 149 }] }
 // ]
 
 // Prepare with values
@@ -79,7 +79,7 @@ const template = 'EventIs(${EVENT_TYPE|upper})';
 
 const parsed = RuleTemplate.parse(template);
 const variables = parsed.extractVariables();
-// [{ name: 'EVENT_TYPE', filters: ['upper'] }]
+// [{ name: 'EVENT_TYPE', filters: ['upper'], positions: [{ start: 8, end: 27 }] }]
 
 // Prepare with filters applied
 const prepared = parsed.prepare({
@@ -154,6 +154,11 @@ Extracts all variables from the template using the AST.
 **Returns:** Array of objects with:
 - `name` (string): The variable name
 - `filters` (array): Array of filter names applied to the variable
+- `positions` (array): Array of position objects, each with:
+  - `start` (number): Zero-based start index of the variable in the template string
+  - `end` (number): Zero-based end index of the variable in the template string
+
+Note: If a variable appears multiple times in the template, all occurrences will be recorded in the `positions` array.
 
 ### `ruleTemplate.validate(variables)`
 

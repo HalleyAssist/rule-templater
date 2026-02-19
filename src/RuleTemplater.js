@@ -75,11 +75,11 @@ class RuleTemplate {
 
     /**
      * Extract variables from the template using the AST
-     * @returns {Array} Array of {name, filters: []} objects
+     * @returns {Array} Array of {name, filters: [], positions: [{start, end}]} objects
      */
     extractVariables(){
         const variables = [];
-        const seen = new Set();
+        const variableMap = new Map();
         
         const traverse = (node) => {
             if (!node) return;
@@ -88,9 +88,24 @@ class RuleTemplate {
             if (node.type === 'template_value') {
                 // Extract the variable information
                 const varInfo = this._extractVariableFromNode(node);
-                if (varInfo && !seen.has(varInfo.name)) {
-                    seen.add(varInfo.name);
-                    variables.push(varInfo);
+                if (varInfo) {
+                    // Add position to existing variable or create new entry
+                    if (variableMap.has(varInfo.name)) {
+                        const existing = variableMap.get(varInfo.name);
+                        existing.positions.push({
+                            start: varInfo.start,
+                            end: varInfo.end
+                        });
+                    } else {
+                        variableMap.set(varInfo.name, {
+                            name: varInfo.name,
+                            filters: varInfo.filters,
+                            positions: [{
+                                start: varInfo.start,
+                                end: varInfo.end
+                            }]
+                        });
+                    }
                 }
             }
             
@@ -103,6 +118,12 @@ class RuleTemplate {
         };
         
         traverse(this.ast);
+        
+        // Convert map to array
+        for (const variable of variableMap.values()) {
+            variables.push(variable);
+        }
+        
         return variables;
     }
 
@@ -134,7 +155,11 @@ class RuleTemplate {
             }
         }
         
-        return { name, filters };
+        // Extract position information from the node
+        const start = node.start;
+        const end = node.end;
+        
+        return { name, filters, start, end };
     }
 
     /**
