@@ -1,6 +1,6 @@
 {
   "name": "@halleyassist/rule-templater",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "The grammar for HalleyAssist rules",
   "main": "index.js",
   "browser": "./dist/rule-templater.browser.js",

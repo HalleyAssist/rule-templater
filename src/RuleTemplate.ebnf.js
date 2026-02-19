@@ -27,6 +27,8 @@ const grammar = `
     number_time_atom     ::= number_time | template_value
     tod_atom             ::= number_tod | template_value
     dow_atom             ::= dow | template_value
+    between_time_only_atom ::= between_time_only | template_value
+    between_tod_only_atom  ::= between_tod_only | template_value
 `
 
 module.exports = Grammars.W3C.getRules(grammar);
