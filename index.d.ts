@@ -89,3 +89,24 @@ export default class RuleTemplate {
 export const ParserRules: any[];
 export const VariableTypes: string[];
 export const TemplateFilters: TemplateFiltersType;
+
+export interface IParsingErrorPosition {
+    offset: number;
+    line: number;
+    column: number;
+}
+
+export interface IFailureTreeNode {
+    name: string;
+    expected?: string | RegExp;
+    children?: IFailureTreeNode[];
+}
+
+export class ParsingError extends Error {
+    readonly position: IParsingErrorPosition;
+    readonly expected: string[];
+    readonly found: string;
+    readonly failureTree?: IFailureTreeNode[];
+    constructor(message: string, position: IParsingErrorPosition, expected: string[], found: string, failureTree?: IFailureTreeNode[]);
+    toString(): string;
+}
