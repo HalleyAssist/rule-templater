@@ -1,6 +1,12 @@
+export interface VariablePosition {
+    start: number;
+    end: number;
+}
+
 export interface VariableInfo {
     name: string;
     filters: string[];
+    positions: VariablePosition[];
 }
 
 export interface VariableValue {

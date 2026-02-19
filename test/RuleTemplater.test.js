@@ -736,4 +736,185 @@ describe('RuleTemplate', function() {
             });
         });
     });
+
+    describe('Variable position extraction', function() {
+        it('should extract positions for single variable occurrence', function() {
+            const template = 'EventIs(${EVENT_TYPE})';
+            const parsed = RuleTemplate.parse(template);
+            const variables = parsed.extractVariables();
+            
+            expect(variables).to.have.length(1);
+            expect(variables[0].name).to.equal('EVENT_TYPE');
+            expect(variables[0].positions).to.be.an('array');
+            expect(variables[0].positions).to.have.length(1);
+            expect(variables[0].positions[0]).to.deep.equal({
+                start: 8,
+                end: 21
+            });
+        });
+
+        it('should extract positions for multiple different variables', function() {
+            const template = 'EventIs(${EVENT_TYPE}) && Value() > ${THRESHOLD}';
+            const parsed = RuleTemplate.parse(template);
+            const variables = parsed.extractVariables();
+            
+            expect(variables).to.have.length(2);
+            
+            const eventVar = variables.find(v => v.name === 'EVENT_TYPE');
+            const thresholdVar = variables.find(v => v.name === 'THRESHOLD');
+            
+            expect(eventVar).to.exist;
+            expect(eventVar.positions).to.have.length(1);
+            expect(eventVar.positions[0]).to.deep.equal({
+                start: 8,
+                end: 21
+            });
+            
+            expect(thresholdVar).to.exist;
+            expect(thresholdVar.positions).to.have.length(1);
+            expect(thresholdVar.positions[0]).to.deep.equal({
+                start: 36,
+                end: 48
+            });
+        });
+
+        it('should extract all positions for variables with multiple occurrences', function() {
+            const template = '${VALUE} > 10 && ${VALUE} < 100';
+            const parsed = RuleTemplate.parse(template);
+            const variables = parsed.extractVariables();
+            
+            expect(variables).to.have.length(1);
+            expect(variables[0].name).to.equal('VALUE');
+            expect(variables[0].positions).to.have.length(2);
+            expect(variables[0].positions[0]).to.deep.equal({
+                start: 0,
+                end: 8
+            });
+            expect(variables[0].positions[1]).to.deep.equal({
+                start: 17,
+                end: 25
+            });
+        });
+
+        it('should extract positions correctly with filters', function() {
+            const template = 'EventIs(${EVENT|upper|trim})';
+            const parsed = RuleTemplate.parse(template);
+            const variables = parsed.extractVariables();
+            
+            expect(variables).to.have.length(1);
+            expect(variables[0].name).to.equal('EVENT');
+            expect(variables[0].filters).to.deep.equal(['upper', 'trim']);
+            expect(variables[0].positions).to.have.length(1);
+            expect(variables[0].positions[0]).to.deep.equal({
+                start: 8,
+                end: 27
+            });
+        });
+
+        it('should handle multiple occurrences with different filter combinations', function() {
+            const template = '${NAME|upper} and ${NAME|lower}';
+            const parsed = RuleTemplate.parse(template);
+            const variables = parsed.extractVariables();
+            
+            // Note: Since filters are part of each variable instance,
+            // we should only track one variable name with its filter from first occurrence
+            expect(variables).to.have.length(1);
+            expect(variables[0].name).to.equal('NAME');
+            expect(variables[0].positions).to.have.length(2);
+            expect(variables[0].positions[0]).to.deep.equal({
+                start: 0,
+                end: 13
+            });
+            expect(variables[0].positions[1]).to.deep.equal({
+                start: 18,
+                end: 31
+            });
+        });
+
+        it('should extract positions in complex nested expressions', function() {
+            const template = '!(EventIs(StrConcat("prefix:", ${ACTION})) && TimeCheck() < ${TIME})';
+            const parsed = RuleTemplate.parse(template);
+            const variables = parsed.extractVariables();
+            
+            expect(variables).to.have.length(2);
+            
+            const actionVar = variables.find(v => v.name === 'ACTION');
+            const timeVar = variables.find(v => v.name === 'TIME');
+            
+            expect(actionVar).to.exist;
+            expect(actionVar.positions).to.have.length(1);
+            expect(actionVar.positions[0].start).to.equal(31);
+            expect(actionVar.positions[0].end).to.equal(40);
+            
+            expect(timeVar).to.exist;
+            expect(timeVar.positions).to.have.length(1);
+            expect(timeVar.positions[0].start).to.equal(60);
+            expect(timeVar.positions[0].end).to.equal(67);
+        });
+
+        it('should extract positions correctly when variable appears in different contexts', function() {
+            const template = '${VALUE} IN (${VALUE}, ${VALUE})';
+            const parsed = RuleTemplate.parse(template);
+            const variables = parsed.extractVariables();
+            
+            expect(variables).to.have.length(1);
+            expect(variables[0].name).to.equal('VALUE');
+            expect(variables[0].positions).to.have.length(3);
+            expect(variables[0].positions[0]).to.deep.equal({
+                start: 0,
+                end: 8
+            });
+            expect(variables[0].positions[1]).to.deep.equal({
+                start: 13,
+                end: 21
+            });
+            expect(variables[0].positions[2]).to.deep.equal({
+                start: 23,
+                end: 31
+            });
+        });
+
+        it('should handle templates with no variables', function() {
+            const template = 'EventIs("test") && Value() > 10';
+            const parsed = RuleTemplate.parse(template);
+            const variables = parsed.extractVariables();
+            
+            expect(variables).to.be.an('array');
+            expect(variables).to.have.length(0);
+        });
+
+        it('should preserve correct positions with whitespace', function() {
+            const template = 'EventIs(  ${EVENT}  )';
+            const parsed = RuleTemplate.parse(template);
+            const variables = parsed.extractVariables();
+            
+            expect(variables).to.have.length(1);
+            expect(variables[0].positions).to.have.length(1);
+            expect(variables[0].positions[0]).to.deep.equal({
+                start: 10,
+                end: 18
+            });
+        });
+
+        it('should extract positions for variables in string arrays', function() {
+            const template = 'EventIs(IN(${EVENT1}, ${EVENT2}))';
+            const parsed = RuleTemplate.parse(template);
+            const variables = parsed.extractVariables();
+            
+            expect(variables).to.have.length(2);
+            
+            const event1 = variables.find(v => v.name === 'EVENT1');
+            const event2 = variables.find(v => v.name === 'EVENT2');
+            
+            expect(event1).to.exist;
+            expect(event1.positions).to.have.length(1);
+            expect(event1.positions[0].start).to.equal(11);
+            expect(event1.positions[0].end).to.equal(20);
+            
+            expect(event2).to.exist;
+            expect(event2.positions).to.have.length(1);
+            expect(event2.positions[0].start).to.equal(22);
+            expect(event2.positions[0].end).to.equal(31);
+        });
+    });
 });
