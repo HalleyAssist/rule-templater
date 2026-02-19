@@ -917,4 +917,163 @@ describe('RuleTemplate', function() {
             expect(event2.positions[0].end).to.equal(31);
         });
     });
+
+    describe('extractFunctions()', function() {
+        it('should extract function names from a simple rule', function() {
+            const template = 'EventIs("test") && Value() > 10';
+            const parsed = RuleTemplate.parse(template);
+            const functions = parsed.extractFunctions();
+            
+            expect(functions).to.be.an('array');
+            expect(functions).to.have.length(2);
+            expect(functions).to.include('EventIs');
+            expect(functions).to.include('Value');
+        });
+
+        it('should extract function names from a rule with templates', function() {
+            const template = 'EventIs(${EVENT_TYPE}) && Value() > ${THRESHOLD}';
+            const parsed = RuleTemplate.parse(template);
+            const functions = parsed.extractFunctions();
+            
+            expect(functions).to.be.an('array');
+            expect(functions).to.have.length(2);
+            expect(functions).to.include('EventIs');
+            expect(functions).to.include('Value');
+        });
+
+        it('should return empty array for rules without functions', function() {
+            const template = 'true && false';
+            const parsed = RuleTemplate.parse(template);
+            const functions = parsed.extractFunctions();
+            
+            expect(functions).to.be.an('array');
+            expect(functions).to.have.length(0);
+        });
+
+        it('should extract all unique function names', function() {
+            const template = 'EventIs("test") && Value() > 10 && TimeLastTrueCheck("last_check") < 60';
+            const parsed = RuleTemplate.parse(template);
+            const functions = parsed.extractFunctions();
+            
+            expect(functions).to.be.an('array');
+            expect(functions).to.have.length(3);
+            expect(functions).to.include('EventIs');
+            expect(functions).to.include('Value');
+            expect(functions).to.include('TimeLastTrueCheck');
+        });
+
+        it('should extract functions from nested function calls', function() {
+            const template = 'EventIs(StrConcat("prefix:", ${SUFFIX}))';
+            const parsed = RuleTemplate.parse(template);
+            const functions = parsed.extractFunctions();
+            
+            expect(functions).to.be.an('array');
+            expect(functions).to.have.length(2);
+            expect(functions).to.include('EventIs');
+            expect(functions).to.include('StrConcat');
+        });
+
+        it('should not duplicate function names that appear multiple times', function() {
+            const template = 'EventIs("test1") || EventIs("test2") || EventIs("test3")';
+            const parsed = RuleTemplate.parse(template);
+            const functions = parsed.extractFunctions();
+            
+            expect(functions).to.be.an('array');
+            expect(functions).to.have.length(1);
+            expect(functions[0]).to.equal('EventIs');
+        });
+
+        it('should extract functions from complex expressions', function() {
+            const template = '!(EventIs(StrConcat("DeviceEvent:measurement:", ${ACTION})) && TimeLastTrueSet("last_measurement") || TimeLastTrueCheck("last_measurement") < ${TIME})';
+            const parsed = RuleTemplate.parse(template);
+            const functions = parsed.extractFunctions();
+            
+            expect(functions).to.be.an('array');
+            expect(functions).to.have.length(4);
+            expect(functions).to.include('EventIs');
+            expect(functions).to.include('StrConcat');
+            expect(functions).to.include('TimeLastTrueSet');
+            expect(functions).to.include('TimeLastTrueCheck');
+        });
+
+        it('should return sorted array of function names', function() {
+            const template = 'TimeLastTrueCheck("check") && EventIs("test") && Value() > 10';
+            const parsed = RuleTemplate.parse(template);
+            const functions = parsed.extractFunctions();
+            
+            expect(functions).to.be.an('array');
+            expect(functions).to.deep.equal(['EventIs', 'TimeLastTrueCheck', 'Value']);
+        });
+
+        it('should handle functions with multiple arguments', function() {
+            const template = 'StrConcat(${PREFIX}, "-", ${SUFFIX}) == "test-value"';
+            const parsed = RuleTemplate.parse(template);
+            const functions = parsed.extractFunctions();
+            
+            expect(functions).to.be.an('array');
+            expect(functions).to.have.length(1);
+            expect(functions[0]).to.equal('StrConcat');
+        });
+
+        it('should extract functions from IN expressions', function() {
+            const template = 'Value() IN (Min(1, 2), Max(3, 4), Avg(5, 6))';
+            const parsed = RuleTemplate.parse(template);
+            const functions = parsed.extractFunctions();
+            
+            expect(functions).to.be.an('array');
+            expect(functions).to.have.length(4);
+            expect(functions).to.include('Value');
+            expect(functions).to.include('Min');
+            expect(functions).to.include('Max');
+            expect(functions).to.include('Avg');
+        });
+
+        it('should extract functions from arithmetic expressions', function() {
+            const template = 'Add(Value(), 10) * Multiply(Factor(), 2) > Threshold()';
+            const parsed = RuleTemplate.parse(template);
+            const functions = parsed.extractFunctions();
+            
+            expect(functions).to.be.an('array');
+            expect(functions).to.include('Add');
+            expect(functions).to.include('Value');
+            expect(functions).to.include('Multiply');
+            expect(functions).to.include('Factor');
+            expect(functions).to.include('Threshold');
+        });
+
+        it('should handle deeply nested function calls', function() {
+            const template = 'OuterFunc(MiddleFunc(InnerFunc("value")))';
+            const parsed = RuleTemplate.parse(template);
+            const functions = parsed.extractFunctions();
+            
+            expect(functions).to.be.an('array');
+            expect(functions).to.have.length(3);
+            expect(functions).to.include('OuterFunc');
+            expect(functions).to.include('MiddleFunc');
+            expect(functions).to.include('InnerFunc');
+        });
+
+        it('should extract functions from boolean expressions', function() {
+            const template = 'IsActive() && (IsEnabled() || IsValid())';
+            const parsed = RuleTemplate.parse(template);
+            const functions = parsed.extractFunctions();
+            
+            expect(functions).to.be.an('array');
+            expect(functions).to.have.length(3);
+            expect(functions).to.include('IsActive');
+            expect(functions).to.include('IsEnabled');
+            expect(functions).to.include('IsValid');
+        });
+
+        it('should extract functions from negated expressions', function() {
+            const template = '!IsFalse() && IsTrue()';
+            const parsed = RuleTemplate.parse(template);
+            const functions = parsed.extractFunctions();
+            
+            expect(functions).to.be.an('array');
+            expect(functions).to.have.length(2);
+            expect(functions).to.include('IsFalse');
+            expect(functions).to.include('IsTrue');
+        });
+    });
 });
