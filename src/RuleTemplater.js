@@ -128,6 +128,39 @@ class RuleTemplate {
     }
 
     /**
+     * Extract function calls from the template using the AST
+     * @returns {Array} Array of unique function names used in the template
+     */
+    extractFunctions(){
+        const functions = new Set();
+        
+        const traverse = (node) => {
+            if (!node) return;
+            
+            // Check if this is a function call node
+            if (node.type === 'fcall') {
+                // Find the function name in children
+                const fnameNode = node.children?.find(c => c.type === 'fname');
+                if (fnameNode && fnameNode.text) {
+                    functions.add(fnameNode.text.trim());
+                }
+            }
+            
+            // Traverse children
+            if (node.children) {
+                for (const child of node.children) {
+                    traverse(child);
+                }
+            }
+        };
+        
+        traverse(this.ast);
+        
+        // Convert set to sorted array for consistent output
+        return Array.from(functions).sort();
+    }
+
+    /**
      * Extract variable name and filters from a template_value AST node
      * @private
      */

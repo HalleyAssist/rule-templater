@@ -69,6 +69,12 @@ export default class RuleTemplate {
     extractVariables(): VariableInfo[];
 
     /**
+     * Extract function calls from the template using the AST
+     * @returns Array of unique function names used in the template
+     */
+    extractFunctions(): string[];
+
+    /**
      * Validate variable types against the AST
      * @param variables Object mapping variable names to {value, type} objects
      * @returns Object with validation results: {valid, errors}

@@ -31,6 +31,11 @@ console.log(variables);
 //   { name: 'THRESHOLD', filters: [], positions: [{ start: 36, end: 48 }] }
 // ]
 
+// Extract function calls from the template
+const functions = parsed.extractFunctions();
+console.log(functions);
+// ['EventIs', 'Value']
+
 // Validate that variables are provided correctly
 const validation = parsed.validate({
     EVENT_TYPE: { value: 'sensor-update', type: 'string' },
@@ -159,6 +164,23 @@ Extracts all variables from the template using the AST.
   - `end` (number): Zero-based end index of the variable in the template string
 
 Note: If a variable appears multiple times in the template, all occurrences will be recorded in the `positions` array.
+
+### `ruleTemplate.extractFunctions()`
+
+Extracts all function calls from the template using the AST.
+
+**Returns:** Array of unique function names (sorted alphabetically) used in the template.
+
+**Example:**
+```javascript
+const template = 'EventIs("test") && Value() > 10 && TimeLastTrueCheck("last_check") < 60';
+const parsed = RuleTemplate.parse(template);
+const functions = parsed.extractFunctions();
+console.log(functions);
+// ['EventIs', 'TimeLastTrueCheck', 'Value']
+```
+
+This is useful for comparing against a hub's list of available functions to ensure all functions used in the template are supported.
 
 ### `ruleTemplate.validate(variables)`
 
