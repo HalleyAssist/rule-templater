@@ -20,11 +20,11 @@
   },
   "homepage": "https://github.com/HalleyAssist/rule-templater#readme",
   "dependencies": {
-    "@halleyassist/rule-parser": "^1.0.19",
+    "@halleyassist/rule-parser": "^1.0.21",
     "ebnf": "git+https://github.com/HalleyAssist/node-ebnf.git"
   },
   "devDependencies": {
-    "@types/node": "^25.1.0",
+    "@types/node": "^25.3.0",
     "browserify": "^17.0.1",
     "chai": "^4",
     "gulp": "^5.0.1",

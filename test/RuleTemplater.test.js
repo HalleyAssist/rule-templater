@@ -1074,6 +1074,61 @@ describe('RuleTemplate', function() {
             expect(functions).to.have.length(2);
             expect(functions).to.include('IsFalse');
             expect(functions).to.include('IsTrue');
+        })
+    });
+    describe('template_value in number_time position', function() {
+        it('should parse template variable followed by time unit (HOURS)', function() {
+            const template = 'TimeOfDay() > TimeOfDayAdd(${LOWER_TIME}, ${HOUR_LIMIT} HOURS)';
+            const parsed = RuleTemplate.parse(template);
+            const variables = parsed.extractVariables();
+
+            expect(variables).to.be.an('array');
+            expect(variables).to.have.length(2);
+            expect(variables.find(v => v.name === 'LOWER_TIME')).to.exist;
+            expect(variables.find(v => v.name === 'HOUR_LIMIT')).to.exist;
+        });
+
+        it('should produce correct AST for template_value with unit', function() {
+            const template = 'TimeOfDay() > TimeOfDayAdd(${LOWER_TIME}, ${HOUR_LIMIT} HOURS)';
+            const parsed = RuleTemplate.parse(template);
+
+            // Find all number_time_atom nodes in the AST
+            function findNodes(node, type, results = []) {
+                if (!node) return results;
+                if (node.type === type) results.push(node);
+                if (node.children) node.children.forEach(c => findNodes(c, type, results));
+                return results;
+            }
+
+            const ntaNodes = findNodes(parsed.ast, 'number_time_atom');
+            // ${HOUR_LIMIT} HOURS should be a number_time_atom with template_value and unit children
+            const hourNode = ntaNodes.find(n => n.text.includes('HOUR_LIMIT'));
+            expect(hourNode).to.exist;
+            expect(hourNode.text).to.equal('${HOUR_LIMIT} HOURS');
+
+            const childTypes = hourNode.children.map(c => c.type);
+            expect(childTypes).to.include('template_value');
+            expect(childTypes).to.include('unit');
+        });
+
+        it('should prepare template with number_time template variable', function() {
+            const template = 'TimeOfDay() > TimeOfDayAdd(${LOWER_TIME}, ${HOUR_LIMIT} HOURS)';
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
+                LOWER_TIME: { value: '10:00', type: 'string' },
+                HOUR_LIMIT: { value: 2, type: 'number' }
+            });
+
+            expect(result).to.equal('TimeOfDay() > TimeOfDayAdd("10:00", 2 HOURS)');
+        });
+
+        it('should parse template variable followed by lowercase time unit', function() {
+            const template = 'Value() > ${LIMIT} minutes';
+            const parsed = RuleTemplate.parse(template);
+            const variables = parsed.extractVariables();
+
+            expect(variables).to.have.length(1);
+            expect(variables[0].name).to.equal('LIMIT');
         });
     });
 });

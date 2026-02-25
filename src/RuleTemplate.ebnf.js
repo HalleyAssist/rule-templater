@@ -24,7 +24,7 @@ const grammar = `
     template_filter_arg  ::= value | template_value
 
     number_atom          ::= number | template_value
-    number_time_atom     ::= number_time | template_value
+    number_time_atom     ::= number_time | template_value WS+ unit | template_value
     tod_atom             ::= number_tod | template_value
     dow_atom             ::= dow | template_value
     between_time_only_atom ::= between_time_only | template_value
