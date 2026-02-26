@@ -62,8 +62,10 @@ gulp.task('build-browser', function() {
     
     return browserify({
         entries: path.resolve(__dirname, 'src/RuleTemplater.browser.js'),
-        standalone: 'RuleTemplater'
+        standalone: 'RuleTemplater',
+        browserField: false
     })
+    .exclude('assert')
     .transform('unassertify')
     .bundle()
     .pipe(source('rule-templater.browser.js'))

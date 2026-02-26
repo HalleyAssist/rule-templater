@@ -1,9 +1,8 @@
-// Note: We import the internal RuleParser.ebnf to extend the grammar with template rules.
-// This creates coupling to the internal structure of @halleyassist/rule-parser.
-const RuleParserRules = require('@halleyassist/rule-parser/src/RuleParser.ebnf'),
-      TemplateGrammar = require('./RuleTemplate.ebnf'),
+// Note: We are coupled closely with the ebnf grammar structure of rule-parser
+const TemplateGrammar = require('./RuleTemplate.ebnf'),
       TemplateFilters = require('./TemplateFilters'),
       RuleParser = require('@halleyassist/rule-parser'),
+      RuleParserRules = RuleParser.ParserRules,
       {Parser} = require('ebnf');
 
 let ParserCache = null;
