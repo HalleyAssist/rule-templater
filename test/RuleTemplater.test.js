@@ -214,7 +214,7 @@ describe('RuleTemplate', function() {
             
             expect(parsed).to.be.instanceOf(RuleTemplate);
             expect(parsed.ast).to.have.property('type');
-            expect(parsed.ast.type).to.equal('statement_main');
+            expect(parsed.ast.type).to.equal('statement');
         });
     });
 
@@ -1086,7 +1086,7 @@ describe('RuleTemplate', function() {
             expect(variables).to.have.length(2);
             expect(variables.find(v => v.name === 'LOWER_TIME')).to.exist;
             expect(variables.find(v => v.name === 'HOUR_LIMIT')).to.exist;
-        });
+        }); 
 
         it('should produce correct AST for template_value with unit', function() {
             const template = 'TimeOfDay() > TimeOfDayAdd(${LOWER_TIME}, ${HOUR_LIMIT} HOURS)';

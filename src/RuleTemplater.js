@@ -3,7 +3,8 @@
 const RuleParserRules = require('@halleyassist/rule-parser/src/RuleParser.ebnf'),
       TemplateGrammar = require('./RuleTemplate.ebnf'),
       TemplateFilters = require('./TemplateFilters'),
-        {Parser} = require('ebnf');
+      RuleParser = require('@halleyassist/rule-parser'),
+      {Parser} = require('ebnf');
 
 let ParserCache = null;
 
@@ -69,7 +70,7 @@ class RuleTemplate {
             ParserCache = new Parser(ParserRules, {debug: false})
         }
 
-        const ast = ParserCache.getAST(ruleTemplate.trim(), 'statement_main');
+        const ast = RuleParser.toAst(ruleTemplate.trim(), ParserCache);
         return new RuleTemplate(ruleTemplate, ast);
     }
 
