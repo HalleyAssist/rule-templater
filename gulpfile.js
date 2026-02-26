@@ -63,10 +63,14 @@ gulp.task('build-browser', function() {
     return browserify({
         entries: path.resolve(__dirname, 'src/RuleTemplater.browser.js'),
         standalone: 'RuleTemplater',
-        browserField: false
+        packageFilter: function(pkg) {
+            // Remove browser field from packages so browserify uses the main
+            // entry point, while still resolving Node.js builtins correctly
+            delete pkg.browser;
+            return pkg;
+        }
     })
-    .exclude('assert')
-    .transform('unassertify')
+    .transform('unassertify', { global: true })
     .bundle()
     .pipe(source('rule-templater.browser.js'))
     .pipe(buffer())
