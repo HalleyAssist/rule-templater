@@ -47,7 +47,8 @@ for(const rule of TemplateGrammar){
 // Add template_value as an alternative to value_atom so templates can be parsed
 const valueAtomIdx = extendedGrammar.findIndex(r => r.name === 'value_atom');
 if (valueAtomIdx !== -1) {
-    extendedGrammar[valueAtomIdx].bnf.push(['template_value']);
+    extendedGrammar[valueAtomIdx] = Object.assign({}, extendedGrammar[valueAtomIdx]);
+    extendedGrammar[valueAtomIdx].bnf = extendedGrammar[valueAtomIdx].bnf.concat([['template_value']]);
 }
 
 // Export the parser rules for potential external use
