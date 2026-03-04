@@ -121,6 +121,8 @@ const prepared = parsed.prepare({
 - **round**: Round number to nearest integer
 - **floor**: Round number down
 - **ceil**: Round number up
+- **time_start**: Extract `from` from `time period` / `time period ago` and convert to `time value`
+- **time_end**: Extract `to` from `time period` / `time period ago` and convert to `time value`
 
 #### Filter Examples
 
@@ -137,6 +139,9 @@ const prepared = parsed.prepare({
 
 // Chaining filters
 '${text|trim|upper}' with text='  hello  ' → HELLO
+
+// Time period conversion
+'${window|time_start}' with window={from:'08:00',to:'12:00'} → 08:00
 ```
 
 ## API

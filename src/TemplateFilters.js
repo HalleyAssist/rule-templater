@@ -121,6 +121,36 @@ const TemplateFilters = {
             varData.type = 'boolean';
         }
 
+    },
+
+    // Extract start time from time period/time period ago as time value
+    time_start: varData => {
+        if (varData.type === 'time period' || varData.type === 'time period ago') {
+            if (!varData.value || typeof varData.value !== 'object' || !Object.prototype.hasOwnProperty.call(varData.value, 'from')) {
+                throw new Error('time_start filter requires value.from for time period types');
+            }
+
+            varData.value = varData.value.from;
+            varData.type = 'time value';
+            return;
+        }
+
+        throw new Error('time_start filter requires variable type to be \"time period\" or \"time period ago\"');
+    },
+
+    // Extract end time from time period/time period ago as time value
+    time_end: varData => {
+        if (varData.type === 'time period' || varData.type === 'time period ago') {
+            if (!varData.value || typeof varData.value !== 'object' || !Object.prototype.hasOwnProperty.call(varData.value, 'to')) {
+                throw new Error('time_end filter requires value.from for time period types');
+            }
+
+            varData.value = varData.value.to;
+            varData.type = 'time value';
+            return;
+        }
+
+        throw new Error('time_end filter requires variable type to be \"time period\" or \"time period ago\"');
     }
 }
 

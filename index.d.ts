@@ -46,6 +46,7 @@ export interface TemplateFiltersType {
     floor: FilterFunction;
     ceil: FilterFunction;
     default: FilterFunction;
+    time_start: FilterFunction;
     [key: string]: FilterFunction;
 }
 

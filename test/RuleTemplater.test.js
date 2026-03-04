@@ -456,6 +456,32 @@ describe('RuleTemplate', function() {
             });
             expect(result).to.equal('EventIs("test")');
         });
+
+        it('should extract start time from time period with time_start filter', function() {
+            const template = 'TimeOfDay() >= ${WINDOW|time_start}';
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
+                WINDOW: {
+                    value: { from: '08:00', to: '12:00' },
+                    type: 'time period'
+                }
+            });
+
+            expect(result).to.equal('TimeOfDay() >= 08:00');
+        });
+
+        it('should extract start time from time period ago with time_start filter', function() {
+            const template = 'TimeOfDay() >= ${WINDOW|time_start}';
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
+                WINDOW: {
+                    value: { from: '08:00', to: '12:00', ago: [2, 'HOURS'] },
+                    type: 'time period ago'
+                }
+            });
+
+            expect(result).to.equal('TimeOfDay() >= 08:00');
+        });
     });
 
     describe('Template locations - comprehensive testing', function() {
