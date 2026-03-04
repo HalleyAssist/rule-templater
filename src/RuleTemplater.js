@@ -26,6 +26,7 @@ const AllowedTypeMapping = {
     'number': ['number_atom', 'math_expr'],
     'boolean': ['boolean_atom', 'boolean_expr'],
     'time period': ['time_period_atom'],
+    'time period ago': ['time_period_atom'],
     'time value': ['time_value_atom', 'tod_atom'],
     'string array': ['string_array'],
     'number array': ['number_array'],
