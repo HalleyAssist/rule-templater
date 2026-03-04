@@ -4,59 +4,123 @@ They are applied in the template syntax as ${variable|filter} or ${variable|filt
 */
 const TemplateFilters = {
     // Convert value to JSON string representation
-    string: value => JSON.stringify(String(value)),
-    
-    // Convert to uppercase
-    upper: value => String(value).toUpperCase(),
-    
-    // Convert to lowercase
-    lower: value => String(value).toLowerCase(),
-    
-    // Capitalize first letter
-    capitalize: value => {
-        const str = String(value);
-        return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    string: varData => {
+        varData.value = String(varData.value);
+        varData.type = 'string';
+
     },
-    
+
+    // Convert to uppercase
+    upper: varData => {
+        varData.value = String(varData.value).toUpperCase();
+        varData.type = 'string';
+
+    },
+
+    // Convert to lowercase
+    lower: varData => {
+        varData.value = String(varData.value).toLowerCase();
+        varData.type = 'string';
+
+    },
+
+    // Capitalize first letter
+    capitalize: varData => {
+        const str = String(varData.value);
+        varData.value = str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+        varData.type = 'string';
+
+    },
+
     // Convert to title case
-    title: value => {
-        return String(value).split(' ')
+    title: varData => {
+        varData.value = String(varData.value).split(' ')
             .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
             .join(' ');
+        varData.type = 'string';
+
     },
-    
+
     // Trim whitespace
-    trim: value => String(value).trim(),
-    
+    trim: varData => {
+        varData.value = String(varData.value).trim();
+        varData.type = 'string';
+
+    },
+
     // Convert to number
-    number: value => Number(value),
-    
+    number: varData => {
+        varData.value = Number(varData.value);
+        varData.type = 'number';
+
+    },
+
     // Convert to boolean
-    boolean: value => {
-        if (typeof value === 'boolean') return value;
+    boolean: varData => {
+        const value = varData.value;
+        if (typeof value === 'boolean') {
+            varData.type = 'boolean';
+
+        }
+
         if (typeof value === 'string') {
             const lower = value.toLowerCase();
-            if (lower === 'true' || lower === '1' || lower === 'yes') return true;
-            if (lower === 'false' || lower === '0' || lower === 'no') return false;
+            if (lower === 'true' || lower === '1' || lower === 'yes') {
+                varData.value = true;
+                varData.type = 'boolean';
+
+            }
+            if (lower === 'false' || lower === '0' || lower === 'no') {
+                varData.value = false;
+                varData.type = 'boolean';
+
+            }
         }
-        return Boolean(value);
+
+        varData.value = Boolean(value);
+        varData.type = 'boolean';
+
     },
-    
+
     // Convert to absolute value (for numbers)
-    abs: value => Math.abs(Number(value)),
-    
+    abs: varData => {
+        varData.value = Math.abs(Number(varData.value));
+        varData.type = 'number';
+
+    },
+
     // Round number
-    round: value => Math.round(Number(value)),
-    
+    round: varData => {
+        varData.value = Math.round(Number(varData.value));
+        varData.type = 'number';
+
+    },
+
     // Floor number
-    floor: value => Math.floor(Number(value)),
-    
+    floor: varData => {
+        varData.value = Math.floor(Number(varData.value));
+        varData.type = 'number';
+
+    },
+
     // Ceil number
-    ceil: value => Math.ceil(Number(value)),
-    
+    ceil: varData => {
+        varData.value = Math.ceil(Number(varData.value));
+        varData.type = 'number';
+
+    },
+
     // Default value if empty/null/undefined
-    default: (value, defaultValue = '') => {
-        return (value === null || value === undefined || value === '') ? defaultValue : value;
+    default: (varData, defaultValue = '') => {
+        varData.value = (varData.value === null || varData.value === undefined || varData.value === '') ? defaultValue : varData.value;
+        if (typeof varData.value === 'string') {
+            varData.type = 'string';
+        } else if (typeof varData.value === 'number') {
+            varData.type = 'number';
+        } else if (typeof varData.value === 'boolean') {
+            varData.type = 'boolean';
+        }
+
     }
 }
 

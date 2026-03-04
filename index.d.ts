@@ -30,7 +30,7 @@ export interface ASTNode {
     [key: string]: any;
 }
 
-export type FilterFunction = (value: any) => any;
+export type FilterFunction = (varData: VariableValue, ...args: any[]) => VariableValue | any;
 
 export interface TemplateFiltersType {
     string: FilterFunction;

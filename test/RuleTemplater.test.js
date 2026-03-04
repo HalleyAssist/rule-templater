@@ -267,7 +267,7 @@ describe('RuleTemplate', function() {
                 EVENT: { value: 'test-event', type: 'string' }
             });
             
-            expect(result).to.equal('EventIs(TEST-EVENT)');
+            expect(result).to.equal('EventIs("TEST-EVENT")');
         });
 
         it('should apply lower filter', function() {
@@ -277,7 +277,7 @@ describe('RuleTemplate', function() {
                 EVENT: { value: 'TEST-EVENT', type: 'string' }
             });
             
-            expect(result).to.equal('EventIs(test-event)');
+            expect(result).to.equal('EventIs("test-event")');
         });
 
         it('should apply capitalize filter', function() {
@@ -287,7 +287,7 @@ describe('RuleTemplate', function() {
                 EVENT: { value: 'test event', type: 'string' }
             });
             
-            expect(result).to.equal('EventIs(Test event)');
+            expect(result).to.equal('EventIs("Test event")');
         });
 
         it('should apply title filter', function() {
@@ -297,7 +297,7 @@ describe('RuleTemplate', function() {
                 EVENT: { value: 'test event name', type: 'string' }
             });
             
-            expect(result).to.equal('EventIs(Test Event Name)');
+            expect(result).to.equal('EventIs("Test Event Name")');
         });
 
         it('should apply trim filter', function() {
@@ -307,17 +307,43 @@ describe('RuleTemplate', function() {
                 EVENT: { value: '  test-event  ', type: 'string' }
             });
             
-            expect(result).to.equal('EventIs(test-event)');
+            expect(result).to.equal('EventIs("test-event")');
         });
 
         it('should apply number filter', function() {
             const template = 'Value() > ${THRESHOLD|number}';
             const parsed = RuleTemplate.parse(template);
-            const result = parsed.prepare({
+            const variables = {
                 THRESHOLD: { value: '42', type: 'string' }
-            });
-            
+            };
+
+            const result = parsed.prepare(variables);
             expect(result).to.equal('Value() > 42');
+            expect(variables.THRESHOLD.type).to.equal('string');
+            expect(variables.THRESHOLD.value).to.equal('42');
+        });
+
+        it('should allow custom filters to mutate cloned varData type', function() {
+            const template = 'EventIs(${EVENT|coerceString})';
+            const parsed = RuleTemplate.parse(template);
+
+            RuleTemplate.TemplateFilters.coerceString = (varData) => {
+                varData.value = String(varData.value);
+                varData.type = 'string';
+                return varData;
+            };
+
+            const variables = {
+                EVENT: { value: 42, type: 'number' }
+            };
+
+            const result = parsed.prepare(variables);
+
+            expect(result).to.equal('EventIs("42")');
+            expect(variables.EVENT.type).to.equal('number');
+            expect(variables.EVENT.value).to.equal(42);
+
+            delete RuleTemplate.TemplateFilters.coerceString;
         });
 
         it('should apply abs filter', function() {
@@ -367,7 +393,7 @@ describe('RuleTemplate', function() {
                 EVENT: { value: '  test-event  ', type: 'string' }
             });
             
-            expect(result).to.equal('EventIs(TEST-EVENT)');
+            expect(result).to.equal('EventIs("TEST-EVENT")');
         });
 
         it('should combine filters with type conversion', function() {
@@ -399,7 +425,7 @@ describe('RuleTemplate', function() {
                 TIME: { value: -60, type: 'number' }
             });
             
-            expect(result).to.equal('EventIs(StrConcat("prefix:", TEMPERATURE)) && Value() > 60');
+            expect(result).to.equal('EventIs(StrConcat("prefix:", "TEMPERATURE")) && Value() > 60');
         });
 
         it('should apply default filter to empty values', function() {
@@ -410,25 +436,25 @@ describe('RuleTemplate', function() {
             let result = parsed.prepare({
                 EVENT: { value: '', type: 'string' }
             });
-            expect(result).to.equal('EventIs()');
+            expect(result).to.equal('EventIs("")');
             
             // Test with null
             result = parsed.prepare({
                 EVENT: { value: null, type: 'string' }
             });
-            expect(result).to.equal('EventIs()');
+            expect(result).to.equal('EventIs("")');
             
             // Test with undefined
             result = parsed.prepare({
                 EVENT: { value: undefined, type: 'string' }
             });
-            expect(result).to.equal('EventIs()');
+            expect(result).to.equal('EventIs("")');
             
             // Test with actual value
             result = parsed.prepare({
                 EVENT: { value: 'test', type: 'string' }
             });
-            expect(result).to.equal('EventIs(test)');
+            expect(result).to.equal('EventIs("test")');
         });
     });
 

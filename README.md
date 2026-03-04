@@ -222,13 +222,16 @@ Helper method to validate that an AST node matches the expected variable type.
 
 Access to the filter functions used by the template engine. Can be extended with custom filters.
 
+Custom filters receive a cloned `varData` object (`{ value, type }`) used for template rendering. They can mutate both fields without mutating the original input variables.
+
 **Example:**
 ```javascript
 const RuleTemplate = require('@halleyassist/rule-templater');
 
 // Add a custom filter
-RuleTemplate.TemplateFilters.reverse = (value) => {
-    return String(value).split('').reverse().join('');
+RuleTemplate.TemplateFilters.reverse = (varData) => {
+    varData.value = String(varData.value).split('').reverse().join('');
+    return varData;
 };
 
 // Use the custom filter

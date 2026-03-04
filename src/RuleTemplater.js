@@ -336,12 +336,12 @@ class RuleTemplate {
             throw new Error(`Variable '${varName}' not provided in variables object`);
         }
         
-        const varData = Object.assign({}, variables[varName]);
+        let varData = variables[varName];
         if (typeof varData !== 'object' || !varData.hasOwnProperty('value')) {
             throw new Error(`Variable '${varName}' must be an object with 'value' property`);
         }
-        
-        let { value, type } = varData;
+
+        varData = Object.assign({}, varData);
         
         // Require type property for all variables
         if (!varData.hasOwnProperty('type')) {
@@ -349,8 +349,8 @@ class RuleTemplate {
         }
         
         // Validate type
-        if (!VariableTypes.includes(type)) {
-            throw new Error(`Invalid variable type '${type}' for variable '${varName}'`);
+        if (!VariableTypes.includes(varData.type)) {
+            throw new Error(`Invalid variable type '${varData.type}' for variable '${varName}'`);
         }
         
         // Apply filters if present
@@ -359,34 +359,42 @@ class RuleTemplate {
                 if (!TemplateFilters[filterName]) {
                     throw new Error(`Unknown filter '${filterName}'`);
                 }
-                value = TemplateFilters[filterName](value);
+               
+                TemplateFilters[filterName](varData);
             }
-            // After applying filters, the result is already a string representation
+        }
+
+        return this._serializeVarData(varData, varName);
+    }
+
+    _serializeVarData(varData, varName) {
+        const { value, type } = varData;
+
+        if (!VariableTypes.includes(type)) {
+            throw new Error(`Invalid variable type '${type}' for variable '${varName}'`);
+        }
+
+        if (type === 'string') {
+            return `"${String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+        }
+
+        if (type === 'number') {
             return String(value);
         }
-        
-        // Convert value to string representation based on type
-        if (type === 'string') {
-            // Escape backslashes first, then quotes in string values.
-            // Order is critical: escaping backslashes first prevents double-escaping.
-            // E.g., "test\" becomes "test\\" then "test\\\"" (correct)
-            // If reversed, "test\" would become "test\\"" then "test\\\\"" (incorrect)
-            return `"${String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
-        } else if (type === 'number') {
-            return String(value);
-        } else if (type === 'boolean') {
+
+        if (type === 'boolean') {
             return value ? 'true' : 'false';
-        } else if (type === 'time period' || type === 'time period ago') {
-            // time period should be in the format {from: '00:00' to: '13:00', ago: [1, week]}
+        }
+
+        if (type === 'time period' || type === 'time period ago') {
             let ret = `${value.from} TO ${value.to}`;
             if(value.ago) {
                 ret += ` AGO ${value.ago[0]} ${value.ago[1]}`;
             }
             return ret;
-        } else {
-            // Default behavior - just insert the value as-is
-            return String(value);
         }
+
+        return String(value);
     }
 
     /**
