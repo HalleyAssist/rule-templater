@@ -13,6 +13,7 @@ const VariableTypes = [
     'boolean',
     'object',
     'time period',
+    'time period ago',
     'time value',
     'string array',
     'number array',
@@ -335,7 +336,7 @@ class RuleTemplate {
             throw new Error(`Variable '${varName}' not provided in variables object`);
         }
         
-        const varData = variables[varName];
+        const varData = Object.assign({}, variables[varName]);
         if (typeof varData !== 'object' || !varData.hasOwnProperty('value')) {
             throw new Error(`Variable '${varName}' must be an object with 'value' property`);
         }
@@ -375,6 +376,13 @@ class RuleTemplate {
             return String(value);
         } else if (type === 'boolean') {
             return value ? 'true' : 'false';
+        } else if (type === 'time period' || type === 'time period ago') {
+            // time period should be in the format {from: '00:00' to: '13:00', ago: [1, week]}
+            let ret = `${value.from} TO ${value.to}`;
+            if(value.ago) {
+                ret += ` AGO ${value.ago[0]} ${value.ago[1]}`;
+            }
+            return ret;
         } else {
             // Default behavior - just insert the value as-is
             return String(value);
