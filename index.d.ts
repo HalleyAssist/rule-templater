@@ -54,7 +54,7 @@ export interface TemplateFiltersType {
     [key: string]: FilterFunction;
 }
 
-export default class RuleTemplate {
+export class RuleTemplate {
     ruleTemplateText: string;
     ast: ASTNode;
 
