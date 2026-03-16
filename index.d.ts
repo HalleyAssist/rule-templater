@@ -10,8 +10,12 @@ export interface VariableInfo {
 }
 
 export interface VariableValue {
-    value: string | number | boolean;
-    type?: 'string' | 'number' | 'boolean' | 'object' | 'time period' | 'time value' | 'string array' | 'number array' | 'boolean array' | 'object array';
+    value: string | number | boolean | {
+        from: string;
+        to: string;
+        ago?: [number, string];
+    };
+    type?: 'string' | 'number' | 'boolean' | 'object' | 'time period' | 'time period ago' | 'time value' | 'string array' | 'number array' | 'boolean array' | 'object array';
 }
 
 export interface Variables {

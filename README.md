@@ -255,6 +255,7 @@ The following variable types are supported:
 - `boolean`
 - `object`
 - `time period`
+- `time period ago`
 - `time value`
 - `string array`
 - `number array`
