@@ -1,1 +1,1 @@
-module.exports = require('./RuleTemplater.production.js');
+module.exports = require('./RuleTemplate.production.js');

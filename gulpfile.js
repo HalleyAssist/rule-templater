@@ -32,11 +32,11 @@ gulp.task('build-production', function(done) {
 
         fs.writeFileSync('src/RuleTemplate.production.ebnf.js', "module.exports="+rules);
 
-        const ruleTemplaterJs = fs.readFileSync('src/RuleTemplater.js', 'utf8');
-        const ruleTemplaterJsFixed = ruleTemplaterJs
+        const RuleTemplateJs = fs.readFileSync('src/RuleTemplate.js', 'utf8');
+        const RuleTemplateJsFixed = RuleTemplateJs
             .replace("require('./RuleTemplate.ebnf')", 'require(\'./RuleTemplate.production.ebnf.js\')')
 
-        fs.writeFileSync('src/RuleTemplater.production.js', ruleTemplaterJsFixed);
+        fs.writeFileSync('src/RuleTemplate.production.js', RuleTemplateJsFixed);
         
         console.log('Production build complete');
         done();
@@ -50,19 +50,19 @@ gulp.task('build-production', function(done) {
 // Note: This task requires production files to exist. Run 'gulp build' or 'gulp build-production' first.
 gulp.task('build-browser', function() {
     // Check if production files exist
-    if (!fs.existsSync('./src/RuleTemplater.production.js')) {
+    if (!fs.existsSync('./src/RuleTemplate.production.js')) {
         console.error('Error: Production files not found. Run "gulp build-production" first.');
         return Promise.reject(new Error('Production files not found'));
     }
     
     // Create a browser entry point if it doesn't exist
-    if (!fs.existsSync('./src/RuleTemplater.browser.js')) {
-        fs.writeFileSync('./src/RuleTemplater.browser.js', "module.exports = require('./RuleTemplater.production.js');");
+    if (!fs.existsSync('./src/RuleTemplate.browser.js')) {
+        fs.writeFileSync('./src/RuleTemplate.browser.js', "module.exports = require('./RuleTemplate.production.js');");
     }
     
     return browserify({
-        entries: path.resolve(__dirname, 'src/RuleTemplater.browser.js'),
-        standalone: 'RuleTemplater',
+        entries: path.resolve(__dirname, 'src/RuleTemplate.browser.js'),
+        standalone: 'RuleTemplate',
         packageFilter: function(pkg) {
             // Remove browser field from packages so browserify uses the main
             // entry point, while still resolving Node.js builtins correctly

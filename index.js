@@ -1,4 +1,4 @@
-const RuleTemplate = require('./src/RuleTemplater');
+const RuleTemplate = require('./src/RuleTemplate');
 const GeneralTemplate = require('./src/GeneralTemplate');
 
 module.exports.RuleTemplate = RuleTemplate;

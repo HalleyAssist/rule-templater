@@ -1,5 +1,5 @@
 node_modules/
 RuleParser.production.*
-RuleTemplater.production.*
+RuleTemplate.production.*
 RuleTemplate.production.*
 dist/
