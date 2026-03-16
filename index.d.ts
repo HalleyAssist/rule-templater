@@ -103,6 +103,22 @@ export default class RuleTemplate {
     static validateVariableNode(astNode: ASTNode | null | undefined, variableType: string): boolean;
 }
 
+export class GeneralTemplate {
+    templateText: string;
+
+    constructor(templateText: string);
+
+    static parse(templateText: string): GeneralTemplate;
+
+    static getVariables(templateText: string): VariableInfo[];
+
+    getVariables(): VariableInfo[];
+
+    extractVariables(): VariableInfo[];
+
+    prepare(variables: Variables): string;
+}
+
 export const ParserRules: any[];
 export const VariableTypes: string[];
 export const TemplateFilters: TemplateFiltersType;

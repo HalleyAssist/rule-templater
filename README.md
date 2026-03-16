@@ -144,6 +144,29 @@ const prepared = parsed.prepare({
 '${window|time_start}' with window={from:'08:00',to:'12:00'} → 08:00
 ```
 
+### General String Templating
+
+For non-rule text templates, use `GeneralTemplate`:
+
+```javascript
+const RuleTemplate = require('@halleyassist/rule-templater');
+const { GeneralTemplate } = RuleTemplate;
+
+const template = 'If a door is opened between ${ALERT_PERIOD | time_start} AND ${ALERT_PERIOD | time_end}';
+
+const variables = GeneralTemplate.getVariables(template);
+// [{ name: 'ALERT_PERIOD', filters: ['time_start'], positions: [...] }]
+
+const parsed = GeneralTemplate.parse(template);
+const prepared = parsed.prepare({
+    ALERT_PERIOD: {
+        value: { from: '08:00', to: '12:00' },
+        type: 'time period'
+    }
+});
+// If a door is opened between 08:00 AND 12:00
+```
+
 ## API
 
 ### `RuleTemplate.parse(ruleTemplate)`
@@ -212,6 +235,22 @@ Prepares the template by replacing variables with their values and applying any 
     - `type` (optional): The variable type ('string', 'number', 'boolean', etc.)
 
 **Returns:** The prepared rule string with variables replaced and filters applied
+
+### `GeneralTemplate.parse(templateText)`
+
+Parses a general string template and returns a `GeneralTemplate` instance.
+
+### `GeneralTemplate.getVariables(templateText)` (Static)
+
+Extracts variables from a general string template without creating an instance manually.
+
+### `generalTemplate.getVariables()`
+
+Extracts variables from a general string template.
+
+### `generalTemplate.prepare(variables)`
+
+Prepares a general string template by replacing `${...}` placeholders with values and applying filters.
 
 ### `RuleTemplate.validateVariableNode(astNode, variableType)` (Static)
 
