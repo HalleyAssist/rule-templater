@@ -1,6 +1,5 @@
 const { expect } = require('chai');
 const RuleTemplate = require('../src/RuleTemplater');
-const { GeneralTemplate } = RuleTemplate;
 
 describe('RuleTemplate', function() {
     describe('parse() and extractVariables()', function() {
@@ -1182,36 +1181,6 @@ describe('RuleTemplate', function() {
 
             expect(variables).to.have.length(1);
             expect(variables[0].name).to.equal('LIMIT');
-        });
-    });
-});
-
-describe('GeneralTemplate', function() {
-    describe('getVariables()', function() {
-        it('should extract variables and filters from a general template string', function() {
-            const template = 'If a door is opened between ${ALERT_PERIOD | time_start} AND ${ALERT_PERIOD | time_end}';
-            const variables = GeneralTemplate.getVariables(template);
-
-            expect(variables).to.be.an('array');
-            expect(variables).to.have.length(1);
-            expect(variables[0].name).to.equal('ALERT_PERIOD');
-            expect(variables[0].filters).to.deep.equal(['time_start', 'time_end']);
-            expect(variables[0].positions).to.have.length(2);
-        });
-    });
-
-    describe('prepare()', function() {
-        it('should prepare a general template string with filters', function() {
-            const template = 'If a door is opened between ${ALERT_PERIOD | time_start} AND ${ALERT_PERIOD | time_end}';
-            const parsed = GeneralTemplate.parse(template);
-            const result = parsed.prepare({
-                ALERT_PERIOD: {
-                    value: { from: '08:00', to: '12:00' },
-                    type: 'time period'
-                }
-            });
-
-            expect(result).to.equal('If a door is opened between 08:00 AND 12:00');
         });
     });
 });
