@@ -155,7 +155,7 @@ const { GeneralTemplate } = RuleTemplate;
 const template = 'If a door is opened between ${ALERT_PERIOD | time_start} AND ${ALERT_PERIOD | time_end}';
 
 const variables = GeneralTemplate.getVariables(template);
-// [{ name: 'ALERT_PERIOD', filters: ['time_start'], positions: [...] }]
+// [{ name: 'ALERT_PERIOD', filters: ['time_start', 'time_end'], positions: [...] }]
 
 const parsed = GeneralTemplate.parse(template);
 const prepared = parsed.prepare({

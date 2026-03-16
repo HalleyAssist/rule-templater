@@ -1195,7 +1195,7 @@ describe('GeneralTemplate', function() {
             expect(variables).to.be.an('array');
             expect(variables).to.have.length(1);
             expect(variables[0].name).to.equal('ALERT_PERIOD');
-            expect(variables[0].filters).to.deep.equal(['time_start']);
+            expect(variables[0].filters).to.deep.equal(['time_start', 'time_end']);
             expect(variables[0].positions).to.have.length(2);
         });
     });

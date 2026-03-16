@@ -435,16 +435,17 @@ class GeneralTemplate {
         const variables = [];
         const variableMap = new Map();
         const pattern = /\$\{([^}]*)\}/g;
-        let match = pattern.exec(this.templateText);
-
-        while (match) {
+        
+        for (const match of this.templateText.matchAll(pattern)) {
             const parsedExpression = this._parseTemplateExpression(match[1]);
             if (parsedExpression) {
                 if (variableMap.has(parsedExpression.name)) {
-                    variableMap.get(parsedExpression.name).positions.push({
+                    const existing = variableMap.get(parsedExpression.name);
+                    existing.positions.push({
                         start: match.index,
                         end: match.index + match[0].length
                     });
+                    existing.filters = Array.from(new Set(existing.filters.concat(parsedExpression.filters)));
                 } else {
                     variableMap.set(parsedExpression.name, {
                         name: parsedExpression.name,
@@ -456,8 +457,6 @@ class GeneralTemplate {
                     });
                 }
             }
-
-            match = pattern.exec(this.templateText);
         }
 
         for (const variable of variableMap.values()) {
