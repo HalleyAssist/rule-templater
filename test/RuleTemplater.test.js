@@ -1,5 +1,5 @@
 const { expect } = require('chai');
-const RuleTemplate = require('../src/RuleTemplater');
+const RuleTemplate = require('../index');
 
 describe('RuleTemplate', function() {
     describe('parse() and extractVariables()', function() {

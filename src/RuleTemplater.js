@@ -1,7 +1,6 @@
 // Note: We are coupled closely with the ebnf grammar structure of rule-parser
 const TemplateGrammar = require('./RuleTemplate.ebnf'),
       TemplateFilters = require('./TemplateFilters'),
-      GeneralTemplate = require('./GeneralTemplate'),
       RuleParser = require('@halleyassist/rule-parser'),
       RuleParserRules = RuleParser.ParserRules,
       {Parser} = require('ebnf');
@@ -419,9 +418,8 @@ class RuleTemplate {
     }
 }
 
-// Export the class and parser rules
+RuleTemplate.ParserRules = ParserRules;
+RuleTemplate.VariableTypes = VariableTypes;
+RuleTemplate.TemplateFilters = TemplateFilters;
+
 module.exports = RuleTemplate;
-module.exports.ParserRules = ParserRules;
-module.exports.VariableTypes = VariableTypes;
-module.exports.TemplateFilters = TemplateFilters;
-module.exports.GeneralTemplate = GeneralTemplate;
