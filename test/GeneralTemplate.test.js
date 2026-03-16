@@ -1,6 +1,5 @@
 const { expect } = require('chai');
-const RuleTemplate = require('../index');
-const { GeneralTemplate } = RuleTemplate;
+const { GeneralTemplate } = require('../index');
 
 describe('GeneralTemplate', function() {
     describe('getVariables()', function() {
