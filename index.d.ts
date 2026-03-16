@@ -54,7 +54,7 @@ export interface TemplateFiltersType {
     [key: string]: FilterFunction;
 }
 
-export default class RuleTemplate {
+export class RuleTemplate {
     ruleTemplateText: string;
     ast: ASTNode;
 
@@ -101,6 +101,22 @@ export default class RuleTemplate {
      * @returns True if valid, false otherwise
      */
     static validateVariableNode(astNode: ASTNode | null | undefined, variableType: string): boolean;
+}
+
+export class GeneralTemplate {
+    templateText: string;
+
+    constructor(templateText: string);
+
+    static parse(templateText: string): GeneralTemplate;
+
+    static getVariables(templateText: string): VariableInfo[];
+
+    getVariables(): VariableInfo[];
+
+    extractVariables(): VariableInfo[];
+
+    prepare(variables: Variables): string;
 }
 
 export const ParserRules: any[];

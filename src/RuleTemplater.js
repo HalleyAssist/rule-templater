@@ -418,8 +418,8 @@ class RuleTemplate {
     }
 }
 
-// Export the class and parser rules
+RuleTemplate.ParserRules = ParserRules;
+RuleTemplate.VariableTypes = VariableTypes;
+RuleTemplate.TemplateFilters = TemplateFilters;
+
 module.exports = RuleTemplate;
-module.exports.ParserRules = ParserRules;
-module.exports.VariableTypes = VariableTypes;
-module.exports.TemplateFilters = TemplateFilters;
