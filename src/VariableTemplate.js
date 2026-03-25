@@ -60,7 +60,7 @@ class VariableTemplate {
             throw new Error(`Variable '${this.variable.name}' must be an object with 'value' property`);
         }
 
-        varData = Object.assign({}, varData);
+        varData = VariableTemplate._cloneVarData(varData);
 
         for (const filterName of this.variable.filters) {
             if (!TemplateFilters[filterName]) {
@@ -107,6 +107,19 @@ class VariableTemplate {
             name: templatePath.text.trim(),
             filters
         };
+    }
+
+    static _cloneVarData(varData) {
+        const cloned = Object.assign({}, varData);
+        if (cloned.value && typeof cloned.value === 'object') {
+            if (Array.isArray(cloned.value)) {
+                cloned.value = cloned.value.slice();
+            } else {
+                cloned.value = Object.assign({}, cloned.value);
+            }
+        }
+
+        return cloned;
     }
 }
 

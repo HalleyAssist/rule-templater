@@ -172,8 +172,7 @@ const prepared = parsed.prepare({
 For a single variable expression, use `VariableTemplate`:
 
 ```javascript
-const RuleTemplate = require('@halleyassist/rule-templater');
-const { VariableTemplate } = RuleTemplate;
+const { VariableTemplate } = require('@halleyassist/rule-templater');
 
 const parsed = VariableTemplate.parse('ALERT_PERIOD|time_start|upper');
 const variable = parsed.extractVariable();
