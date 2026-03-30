@@ -52,7 +52,9 @@ const TemplateFilters = {
     number: varData => {
         varData.value = Number(varData.value);
         varData.type = 'number';
-
+        if(isNaN(varData.value)){
+            throw new Error(`Value "${varData.value}" cannot be converted to a number`);
+        }
     },
 
     // Convert to boolean
