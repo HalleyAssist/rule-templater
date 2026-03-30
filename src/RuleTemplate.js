@@ -1,6 +1,7 @@
 // Note: We are coupled closely with the ebnf grammar structure of rule-parser
 const TemplateGrammar = require('./RuleTemplate.ebnf'),
       TemplateFilters = require('./TemplateFilters'),
+    VariableValidate = require('./VariableValidate'),
       RuleParser = require('@halleyassist/rule-parser'),
       RuleParserRules = RuleParser.ParserRules,
       {Parser} = require('ebnf');
@@ -247,6 +248,14 @@ class RuleTemplate {
             // Validate type if provided
             if (type && !VariableTypes.includes(type)) {
                 errors.push(`Invalid variable type '${type}' for variable '${varName}'`);
+                continue;
+            }
+
+            if (type) {
+                const validation = VariableValidate.validate(varData);
+                if (!validation.valid) {
+                    errors.push(`Invalid value for variable '${varName}': ${validation.error}`);
+                }
             }
         }
         
@@ -367,6 +376,11 @@ class RuleTemplate {
             }
         }
 
+        const validation = VariableValidate.validate(varData);
+        if (!validation.valid) {
+            throw new Error(`Invalid value for variable '${varName}': ${validation.error}`);
+        }
+
         return this._serializeVarData(varData, varName);
     }
 
@@ -397,6 +411,10 @@ class RuleTemplate {
             return ret;
         }
 
+        if (type === 'object' || type === 'string array' || type === 'number array' || type === 'boolean array' || type === 'object array') {
+            return JSON.stringify(value);
+        }
+
         return String(value);
     }
 
@@ -423,5 +441,6 @@ class RuleTemplate {
 RuleTemplate.ParserRules = ParserRules;
 RuleTemplate.VariableTypes = VariableTypes;
 RuleTemplate.TemplateFilters = TemplateFilters;
+RuleTemplate.VariableValidate = VariableValidate;
 
 module.exports = RuleTemplate;

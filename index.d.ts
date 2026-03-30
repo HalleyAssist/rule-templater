@@ -14,8 +14,8 @@ export interface VariableValue {
         from: string;
         to: string;
         ago?: [number, string];
-    };
-    type?: 'string' | 'number' | 'boolean' | 'object' | 'time period' | 'time period ago' | 'time value' | 'string array' | 'number array' | 'boolean array' | 'object array';
+    } | Record<string, any> | string[] | number[] | boolean[] | Record<string, any>[];
+    type?: 'string' | 'number' | 'boolean' | 'object' | 'time period' | 'time period ago' | 'time value' | 'number time' | 'string array' | 'number array' | 'boolean array' | 'object array';
 }
 
 export interface Variables {
@@ -25,6 +25,11 @@ export interface Variables {
 export interface ValidationResult {
     valid: boolean;
     errors: string[];
+}
+
+export interface VariableValidationResult {
+    valid: boolean;
+    error?: string;
 }
 
 export interface ASTNode {
@@ -137,6 +142,14 @@ export class VariableTemplate {
     };
 
     format(variableData: VariableValue | Variables): VariableValue;
+}
+
+export class VariableValidate {
+    static VariableTypes: string[];
+    static validators: Record<string, (value: any) => VariableValidationResult>;
+    static validate(variableData: VariableValue): VariableValidationResult;
+    static validateValue(type: string, value: any): VariableValidationResult;
+    static isValid(type: string, value: any): boolean;
 }
 
 export const ParserRules: any[];

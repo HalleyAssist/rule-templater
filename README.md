@@ -305,6 +305,25 @@ const result = parsed.prepare({ EVENT: { value: 'test' } });
 // Result: EventIs(tset)
 ```
 
+### `VariableValidate`
+
+BNF-backed validators for each supported variable type.
+
+**Example:**
+```javascript
+const { VariableValidate } = require('@halleyassist/rule-templater');
+
+const result = VariableValidate.validate({
+    value: { from: '08:00', to: '12:00', ago: [2, 'HOURS'] },
+    type: 'time period ago'
+});
+
+console.log(result.valid);
+// true
+```
+
+Use `VariableValidate.validateValue(type, value)` to validate a raw value against a specific variable type.
+
 ## Variable Types
 
 The following variable types are supported:
@@ -316,6 +335,7 @@ The following variable types are supported:
 - `time period`
 - `time period ago`
 - `time value`
+- `number time`
 - `string array`
 - `number array`
 - `boolean array`
