@@ -264,10 +264,7 @@ class RuleTemplate {
 
         if (functionBlob && typeof functionBlob.validate === 'function') {
             for (const functionCall of this._extractFunctionCalls()) {
-                warnings.push(...functionBlob.validate(
-                    functionCall.name,
-                    Array.from({ length: functionCall.argumentCount })
-                ));
+                warnings.push(...functionBlob.validate(functionCall.name, functionCall.arguments));
             }
         }
         
@@ -290,7 +287,9 @@ class RuleTemplate {
                 if (functionName) {
                     functionCalls.push({
                         name: functionName,
-                        argumentCount: argumentsNode?.children?.filter(c => c.type === 'argument').length || 0
+                        arguments: argumentsNode?.children
+                            ?.filter(c => c.type === 'argument')
+                            .map(c => c.text) || []
                     });
                 }
             }
