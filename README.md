@@ -167,6 +167,26 @@ const prepared = parsed.prepare({
 // If a door is opened between 08:00 AND 12:00
 ```
 
+### Variable Template
+
+For a single variable expression, use `VariableTemplate`:
+
+```javascript
+const { VariableTemplate } = require('@halleyassist/rule-templater');
+
+const parsed = VariableTemplate.parse('ALERT_PERIOD|time_start|upper');
+const variable = parsed.extractVariable();
+// { name: 'ALERT_PERIOD', filters: ['time_start', 'upper'] }
+
+const formatted = parsed.format({
+    ALERT_PERIOD: {
+        value: { from: '08:00', to: '12:00' },
+        type: 'time period'
+    }
+});
+// { value: '08:00', type: 'string' }
+```
+
 ## API
 
 ### `RuleTemplate.parse(ruleTemplate)`

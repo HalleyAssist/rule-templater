@@ -119,6 +119,26 @@ export class GeneralTemplate {
     prepare(variables: Variables): string;
 }
 
+export class VariableTemplate {
+    templateText: string;
+    ast: ASTNode;
+    variable: {
+        name: string;
+        filters: string[];
+    };
+
+    constructor(templateText: string, ast: ASTNode, variableInfo: { name: string; filters: string[] });
+
+    static parse(templateText: string): VariableTemplate;
+
+    extractVariable(): {
+        name: string;
+        filters: string[];
+    };
+
+    format(variableData: VariableValue | Variables): VariableValue;
+}
+
 export const ParserRules: any[];
 export const VariableTypes: string[];
 export const TemplateFilters: TemplateFiltersType;
