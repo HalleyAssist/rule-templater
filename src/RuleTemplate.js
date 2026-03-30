@@ -215,17 +215,20 @@ class RuleTemplate {
     /**
      * Validate variable types against the AST
      * @param {Object} variables - Object mapping variable names to {type} objects
-     * @returns {Object} Object with validation results: {valid: boolean, errors: []}
+     * @param {Object} [functionBlob] - Optional HalleyFunctionBlob used for non-fatal function warnings
+     * @returns {Object} Object with validation results: {valid: boolean, errors: [], warnings: []}
      */
-    validate(variables) {
+    validate(variables, functionBlob) {
         if (!variables || typeof variables !== 'object') {
             return {
                 valid: false,
-                errors: ['Variables must be provided as an object']
+                errors: ['Variables must be provided as an object'],
+                warnings: []
             };
         }
 
         const errors = [];
+        const warnings = [];
         const extractedVars = this.extractVariables();
         
         for (const varInfo of extractedVars) {
@@ -258,11 +261,49 @@ class RuleTemplate {
                 }
             }
         }
+
+        if (functionBlob && typeof functionBlob.validate === 'function') {
+            for (const functionCall of this._extractFunctionCalls()) {
+                warnings.push(...functionBlob.validate(
+                    functionCall.name,
+                    Array.from({ length: functionCall.argumentCount })
+                ));
+            }
+        }
         
         return {
             valid: errors.length === 0,
-            errors
+            errors,
+            warnings
         };
+    }
+
+    _extractFunctionCalls() {
+        const functionCalls = [];
+
+        const traverse = (node) => {
+            if (!node) return;
+
+            if (node.type === 'fcall') {
+                const functionName = node.children?.find(c => c.type === 'fname')?.text?.trim();
+                const argumentsNode = node.children?.find(c => c.type === 'arguments');
+                if (functionName) {
+                    functionCalls.push({
+                        name: functionName,
+                        argumentCount: argumentsNode?.children?.filter(c => c.type === 'argument').length || 0
+                    });
+                }
+            }
+
+            if (node.children) {
+                for (const child of node.children) {
+                    traverse(child);
+                }
+            }
+        };
+
+        traverse(this.ast);
+        return functionCalls;
     }
 
     /**

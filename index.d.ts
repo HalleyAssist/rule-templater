@@ -26,6 +26,7 @@ export interface Variables {
 export interface ValidationResult {
     valid: boolean;
     errors: string[];
+    warnings: string[];
 }
 
 export interface VariableValidationResult {
@@ -101,7 +102,7 @@ export class RuleTemplate {
      * @param variables Object mapping variable names to {value, type} objects
      * @returns Object with validation results: {valid, errors}
      */
-    validate(variables: Variables): ValidationResult;
+    validate(variables: Variables, functionBlob?: HalleyFunctionBlob): ValidationResult;
 
     /**
      * Prepare the template by replacing variables with their values

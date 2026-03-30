@@ -1,5 +1,5 @@
 const { expect } = require('chai');
-const {RuleTemplate} = require('../index');
+const {RuleTemplate, HalleyFunctionBlob} = require('../index');
 
 describe('RuleTemplate', function() {
     describe('parse() and extractVariables()', function() {
@@ -158,6 +158,7 @@ describe('RuleTemplate', function() {
             
             expect(result.valid).to.be.true;
             expect(result.errors).to.be.an('array').that.is.empty;
+            expect(result.warnings).to.be.an('array').that.is.empty;
         });
 
         it('should detect missing variables', function() {
@@ -194,6 +195,46 @@ describe('RuleTemplate', function() {
             
             expect(result.valid).to.be.true;
             expect(result.errors).to.be.an('array').that.is.empty;
+            expect(result.warnings).to.be.an('array').that.is.empty;
+        });
+
+        it('should include non-fatal function warnings when a function blob is provided', function() {
+            const template = 'EventIs(StrConcat(${EVENT_TYPE}))';
+            const parsed = RuleTemplate.parse(template);
+            const blob = new HalleyFunctionBlob({
+                functions: [
+                    { name: 'EventIs', arguments: ['event'] },
+                    { name: 'StrConcat', arguments: ['left', 'right'] }
+                ]
+            });
+
+            const result = parsed.validate({
+                EVENT_TYPE: { value: 'test', type: 'string' }
+            }, blob);
+
+            expect(result.valid).to.be.true;
+            expect(result.errors).to.be.an('array').that.is.empty;
+            expect(result.warnings).to.deep.equal([
+                "parameter 2 of StrConcat 'right' is missing, function expects 2 parameters"
+            ]);
+        });
+
+        it('should report unknown functions as warnings rather than validation errors', function() {
+            const template = 'MissingFunction(${EVENT_TYPE})';
+            const parsed = RuleTemplate.parse(template);
+            const blob = new HalleyFunctionBlob({
+                functions: []
+            });
+
+            const result = parsed.validate({
+                EVENT_TYPE: { value: 'test', type: 'string' }
+            }, blob);
+
+            expect(result.valid).to.be.true;
+            expect(result.errors).to.be.an('array').that.is.empty;
+            expect(result.warnings).to.deep.equal([
+                "function 'MissingFunction' does not exist"
+            ]);
         });
     });
 
