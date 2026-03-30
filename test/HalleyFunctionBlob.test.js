@@ -62,20 +62,70 @@ describe('HalleyFunctionBlob', function() {
     });
 
     it('loads and constructs a blob via fetch', async function() {
-        const originalFetch = global.fetch;
+        const originalFetch = globalThis.fetch;
+        let requestedUrl = null;
 
-        global.fetch = async (url) => ({
-            ok: true,
-            json: async () => Object.assign({ requestedUrl: url }, functionBlobData)
-        });
+        globalThis.fetch = async (url) => {
+            requestedUrl = url;
+            return {
+                ok: true,
+                json: async () => functionBlobData
+            };
+        };
 
         try {
             const blob = await HalleyFunctionBlob.fromURL('https://example.com/functions.json');
 
             expect(blob).to.be.instanceOf(HalleyFunctionBlob);
+            expect(requestedUrl).to.equal('https://example.com/functions.json');
             expect(blob.functions).to.deep.equal(functionBlobData.functions);
         } finally {
-            global.fetch = originalFetch;
+            globalThis.fetch = originalFetch;
+        }
+    });
+
+    it('throws when fetch is unavailable', async function() {
+        const originalFetch = globalThis.fetch;
+
+        globalThis.fetch = undefined;
+
+        try {
+            let thrownError = null;
+            try {
+                await HalleyFunctionBlob.fromURL('https://example.com/functions.json');
+            } catch (error) {
+                thrownError = error;
+            }
+
+            expect(thrownError).to.be.instanceOf(Error);
+            expect(thrownError.message).to.equal('Fetch API is not available');
+        } finally {
+            globalThis.fetch = originalFetch;
+        }
+    });
+
+    it('throws when fetch returns a non-ok response', async function() {
+        const originalFetch = globalThis.fetch;
+
+        globalThis.fetch = async () => ({
+            ok: false,
+            json: async () => functionBlobData
+        });
+
+        try {
+            let thrownError = null;
+            try {
+                await HalleyFunctionBlob.fromURL('https://example.com/functions.json');
+            } catch (error) {
+                thrownError = error;
+            }
+
+            expect(thrownError).to.be.instanceOf(Error);
+            expect(thrownError.message).to.equal(
+                "Failed to fetch function blob from 'https://example.com/functions.json'"
+            );
+        } finally {
+            globalThis.fetch = originalFetch;
         }
     });
 });
