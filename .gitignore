@@ -3,3 +3,4 @@ RuleParser.production.*
 RuleTemplate.production.*
 RuleTemplate.production.*
 dist/
+src/RuleTemplate.browser.js
