@@ -301,6 +301,75 @@ The following variable types are supported:
 - `boolean array`
 - `object array`
 
+### Time Type Formats
+
+The time-related variable types use the following structures when passed to `prepare()` or `validate()`:
+
+#### `time value`
+
+Use a time-of-day string such as `08:00`.
+
+```javascript
+{
+    value: '08:00',
+    type: 'time value'
+}
+```
+
+This is useful when a rule expects a single time value, for example:
+
+```javascript
+const prepared = parsed.prepare({
+    START_TIME: { value: '08:00', type: 'time value' }
+});
+```
+
+#### `time period`
+
+Use an object with `from` and `to` properties, both using the same time-of-day string format as `time value`.
+
+```javascript
+{
+    value: {
+        from: '08:00',
+        to: '12:00'
+    },
+    type: 'time period'
+}
+```
+
+When rendered into a rule template, this becomes:
+
+```text
+08:00 TO 12:00
+```
+
+#### `time period ago`
+
+Use the same structure as `time period`, plus an `ago` tuple containing:
+
+- the numeric offset
+- the rule time unit token, for example `HOURS`
+
+```javascript
+{
+    value: {
+        from: '08:00',
+        to: '12:00',
+        ago: [2, 'HOURS']
+    },
+    type: 'time period ago'
+}
+```
+
+When rendered into a rule template, this becomes:
+
+```text
+08:00 TO 12:00 AGO 2 HOURS
+```
+
+The `time_start` and `time_end` filters can extract `from` and `to` from either `time period` or `time period ago` and convert them to `time value`.
+
 ## License
 
 ISC
