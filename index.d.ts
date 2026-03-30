@@ -26,6 +26,7 @@ export interface Variables {
 export interface ValidationResult {
     valid: boolean;
     errors: string[];
+    warnings: string[];
 }
 
 export interface VariableValidationResult {
@@ -60,6 +61,17 @@ export interface TemplateFiltersType {
     [key: string]: FilterFunction;
 }
 
+export interface HalleyFunctionDefinition {
+    name: string;
+    arguments: string[];
+}
+
+export interface HalleyFunctionBlobData {
+    _schema?: number;
+    version?: string;
+    functions?: HalleyFunctionDefinition[];
+}
+
 export class RuleTemplate {
     ruleTemplateText: string;
     ast: ASTNode;
@@ -90,7 +102,7 @@ export class RuleTemplate {
      * @param variables Object mapping variable names to {value, type} objects
      * @returns Object with validation results: {valid, errors}
      */
-    validate(variables: Variables): ValidationResult;
+    validate(variables: Variables, functionBlob?: HalleyFunctionBlob): ValidationResult;
 
     /**
      * Prepare the template by replacing variables with their values
@@ -123,6 +135,18 @@ export class GeneralTemplate {
     extractVariables(): VariableInfo[];
 
     prepare(variables: Variables): string;
+}
+
+export class HalleyFunctionBlob {
+    _schema?: number;
+    version?: string;
+    functions: HalleyFunctionDefinition[];
+
+    constructor(jsonData: HalleyFunctionBlobData);
+
+    static fromURL(url: string): Promise<HalleyFunctionBlob>;
+
+    validate(functionName: string, variables?: any[]): string[];
 }
 
 export class VariableTemplate {
