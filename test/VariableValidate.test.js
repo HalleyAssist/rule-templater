@@ -24,6 +24,13 @@ describe('VariableValidate', function() {
         });
     }
 
+    for (const type of ['string array', 'number array', 'boolean array', 'object array']) {
+        it(`accepts empty ${type} values`, function() {
+            const result = VariableValidate.validateValue(type, []);
+            expect(result).to.deep.equal({ valid: true });
+        });
+    }
+
     it('rejects unsupported variable types', function() {
         const result = VariableValidate.validateValue('made up', 'x');
         expect(result.valid).to.equal(false);
@@ -59,6 +66,15 @@ describe('VariableValidate', function() {
     it('validates complete variable data objects', function() {
         const result = VariableValidate.validate({
             value: ['alpha', 'beta'],
+            type: 'string array'
+        });
+
+        expect(result).to.deep.equal({ valid: true });
+    });
+
+    it('accepts empty typed arrays in variable data objects', function() {
+        const result = VariableValidate.validate({
+            value: [],
             type: 'string array'
         });
 
