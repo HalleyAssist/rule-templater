@@ -65,6 +65,65 @@ describe('VariableValidate', function() {
         expect(result).to.deep.equal({ valid: true });
     });
 
+    it('applies filters from variable data before validation', function() {
+        const result = VariableValidate.validate({
+            value: { from: '08:00', to: '12:00' },
+            type: 'time period',
+            filters: ['time_start']
+        });
+
+        expect(result).to.deep.equal({ valid: true });
+    });
+
+    it('supports type-changing filters from variable data', function() {
+        const result = VariableValidate.validate({
+            value: '42',
+            type: 'string',
+            filters: ['number']
+        });
+
+        expect(result).to.deep.equal({ valid: true });
+    });
+
+    it('rejects unknown filters from variable data', function() {
+        const result = VariableValidate.validate({
+            value: 'hello',
+            type: 'string',
+            filters: ['missing_filter']
+        });
+
+        expect(result.valid).to.equal(false);
+        expect(result.error).to.include('Unknown filter');
+    });
+
+    it('rejects non-array filter lists', function() {
+        const result = VariableValidate.validate({
+            value: 'hello',
+            type: 'string',
+            filters: 'upper'
+        });
+
+        expect(result.valid).to.equal(false);
+        expect(result.error).to.include('filters must be an array');
+    });
+
+    it('does not mutate original variable data when filters are applied', function() {
+        const variableData = {
+            value: '  hello  ',
+            type: 'string',
+            filters: ['trim', 'upper']
+        };
+
+        const result = VariableValidate.validate(variableData);
+
+        expect(result).to.deep.equal({ valid: true });
+        expect(variableData).to.deep.equal({
+            value: '  hello  ',
+            type: 'string',
+            filters: ['trim', 'upper']
+        });
+    });
+
     it('rejects missing type metadata', function() {
         const result = VariableValidate.validate({ value: 'hello' });
         expect(result.valid).to.equal(false);

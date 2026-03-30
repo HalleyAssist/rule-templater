@@ -15,6 +15,7 @@ export interface VariableValue {
         to: string;
         ago?: [number, string];
     } | Record<string, any> | string[] | number[] | boolean[] | Record<string, any>[];
+    filters?: string[];
     type?: 'string' | 'number' | 'boolean' | 'object' | 'time period' | 'time period ago' | 'time value' | 'number time' | 'string array' | 'number array' | 'boolean array' | 'object array';
 }
 

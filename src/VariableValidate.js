@@ -1,5 +1,6 @@
 const { Parser } = require('ebnf');
 const TemplateGrammar = require('./RuleTemplate.ebnf');
+const TemplateFilters = require('./TemplateFilters');
 const RuleParser = require('@halleyassist/rule-parser');
 const RuleParserRules = RuleParser.ParserRules;
 
@@ -46,7 +47,17 @@ class VariableValidate {
             };
         }
 
-        return VariableValidate.validateValue(variableData.type, variableData.value);
+        let normalizedVarData;
+        try {
+            normalizedVarData = VariableValidate._normalizeVarData(variableData);
+        } catch (error) {
+            return {
+                valid: false,
+                error: error.message
+            };
+        }
+
+        return VariableValidate.validateValue(normalizedVarData.type, normalizedVarData.value);
     }
 
     static validateValue(type, value) {
@@ -111,6 +122,49 @@ class VariableValidate {
         }
 
         return ParserCache;
+    }
+
+    static _normalizeVarData(variableData) {
+        const normalizedVarData = VariableValidate._cloneVarData(variableData);
+
+        if (!Object.prototype.hasOwnProperty.call(normalizedVarData, 'value')) {
+            throw new Error('Variable data must include a value property');
+        }
+
+        if (!Object.prototype.hasOwnProperty.call(normalizedVarData, 'filters')) {
+            return normalizedVarData;
+        }
+
+        if (!Array.isArray(normalizedVarData.filters)) {
+            throw new Error('Variable data filters must be an array');
+        }
+
+        for (const filterName of normalizedVarData.filters) {
+            if (!TemplateFilters[filterName]) {
+                throw new Error(`Unknown filter '${filterName}'`);
+            }
+
+            TemplateFilters[filterName](normalizedVarData);
+        }
+
+        return normalizedVarData;
+    }
+
+    static _cloneVarData(variableData) {
+        const cloned = Object.assign({}, variableData);
+        if (Array.isArray(cloned.filters)) {
+            cloned.filters = cloned.filters.slice();
+        }
+
+        if (cloned.value && typeof cloned.value === 'object') {
+            if (Array.isArray(cloned.value)) {
+                cloned.value = cloned.value.slice();
+            } else {
+                cloned.value = Object.assign({}, cloned.value);
+            }
+        }
+
+        return cloned;
     }
 
     static _serializeString(value) {
