@@ -49,6 +49,72 @@ for(const rule of TemplateGrammar){
     }
 }
 
+const cloneRule = (ruleName) => {
+    const idx = extendedGrammar.findIndex(rule => rule.name === ruleName);
+    if (idx === -1) {
+        return null;
+    }
+
+    extendedGrammar[idx] = Object.assign({}, extendedGrammar[idx], {
+        bnf: extendedGrammar[idx].bnf.map(alt => Array.isArray(alt) ? alt.slice() : alt)
+    });
+
+    return extendedGrammar[idx];
+};
+
+const appendAlternative = (ruleName, alternative) => {
+    const rule = cloneRule(ruleName);
+    if (!rule) {
+        return;
+    }
+
+    const exists = rule.bnf.some(existing => JSON.stringify(existing) === JSON.stringify(alternative));
+    if (!exists) {
+        rule.bnf.push(alternative);
+    }
+};
+
+const replaceRule = (ruleName, bnf) => {
+    const idx = extendedGrammar.findIndex(rule => rule.name === ruleName);
+    if (idx === -1) {
+        extendedGrammar.push({name: ruleName, bnf});
+        return;
+    }
+
+    extendedGrammar[idx] = Object.assign({}, extendedGrammar[idx], {
+        bnf: bnf.map(alt => alt.slice())
+    });
+};
+
+appendAlternative('number_atom', ['template_value']);
+appendAlternative('number_time_atom', ['template_value', 'WS+', 'unit']);
+appendAlternative('number_time_atom', ['template_value']);
+appendAlternative('tod_atom', ['template_value']);
+appendAlternative('dow_atom', ['template_value']);
+appendAlternative('between_time_only_atom', ['template_value']);
+appendAlternative('between_tod_only_atom', ['template_value']);
+appendAlternative('string_atom', ['template_value']);
+appendAlternative('boolean_atom', ['template_value']);
+appendAlternative('time_value_atom', ['template_value']);
+appendAlternative('time_period_atom', ['template_value']);
+appendAlternative('time_period_ago_atom', ['template_value']);
+appendAlternative('object_atom', ['template_value']);
+appendAlternative('string_array', ['template_value']);
+appendAlternative('number_array', ['template_value']);
+appendAlternative('boolean_array', ['template_value']);
+appendAlternative('object_array', ['template_value']);
+
+replaceRule('argument', [
+    ['number_time_atom', 'WS*'],
+    ['statement', 'WS*']
+]);
+
+replaceRule('simple_result', [
+    ['fcall'],
+    ['number_time_atom'],
+    ['value']
+]);
+
 // Export the parser rules for potential external use
 const ParserRules = extendedGrammar;
 
