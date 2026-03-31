@@ -351,6 +351,14 @@ class RuleTemplate {
             }
         }
 
+        if (errors.length === 0) {
+            try {
+                RuleParser.toAst(this.prepare(variables));
+            } catch (error) {
+                errors.push(`Prepared rule is invalid: ${error.message}`);
+            }
+        }
+
         if (functionBlob && typeof functionBlob.validate === 'function') {
             for (const functionCall of this._extractFunctionCalls()) {
                 warnings.push(...functionBlob.validate(functionCall.name, functionCall.arguments));

@@ -187,6 +187,39 @@ describe('RuleTemplate', function() {
             expect(result.errors[0]).to.include('Invalid variable type');
         });
 
+        it('should reject time period variables used directly in function arguments', function() {
+            const template = 'SensorActionDuration(HasCapableSensor("bed"), "presence:present", "presence:absent", ${DAY_ALERT_PERIOD})';
+            const parsed = RuleTemplate.parse(template);
+
+            const result = parsed.validate({
+                DAY_ALERT_PERIOD: {
+                    value: { from: '08:00', to: '17:00' },
+                    type: 'time period'
+                }
+            });
+
+            expect(result.valid).to.be.false;
+            expect(result.errors).to.deep.equal([
+                'Prepared rule is invalid: Invalid function call syntax.'
+            ]);
+        });
+
+        it('should allow time period variables in function arguments when converted to a BETWEEN expression', function() {
+            const template = 'SensorActionDuration(HasCapableSensor("bed"), "presence:present", "presence:absent", BETWEEN ${DAY_ALERT_PERIOD|time_start} AND ${DAY_ALERT_PERIOD|time_end})';
+            const parsed = RuleTemplate.parse(template);
+
+            const result = parsed.validate({
+                DAY_ALERT_PERIOD: {
+                    value: { from: '08:00', to: '17:00' },
+                    type: 'time period'
+                }
+            });
+
+            expect(result.valid).to.be.true;
+            expect(result.errors).to.be.an('array').that.is.empty;
+            expect(result.warnings).to.be.an('array').that.is.empty;
+        });
+
         it('should handle templates without variables', function() {
             const template = 'EventIs("test")';
             const parsed = RuleTemplate.parse(template);
