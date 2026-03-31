@@ -60,4 +60,38 @@ describe('GeneralTemplate', function() {
             }).to.throw('Unknown filter');
         });
     });
+
+    describe('validate()', function() {
+        it('should validate known filter chains', function() {
+            const template = 'Hello ${NAME|trim}';
+            const parsed = GeneralTemplate.parse(template);
+
+            const result = parsed.validate();
+
+            expect(result.valid).to.be.true;
+            expect(result.errors).to.be.an('array').that.is.empty;
+            expect(result.warnings).to.be.an('array').that.is.empty;
+        });
+
+        it('should allow templates without filters', function() {
+            const template = 'Hello ${NAME}';
+            const parsed = GeneralTemplate.parse(template);
+
+            const result = parsed.validate();
+
+            expect(result.valid).to.be.true;
+            expect(result.errors).to.be.an('array').that.is.empty;
+            expect(result.warnings).to.be.an('array').that.is.empty;
+        });
+
+        it('should detect unknown filters in the template', function() {
+            const template = 'Status: ${STATUS|upper|missing_filter}';
+            const parsed = GeneralTemplate.parse(template);
+
+            const result = parsed.validate();
+
+            expect(result.valid).to.be.false;
+            expect(result.errors).to.deep.include("Unknown filter 'missing_filter' for variable 'STATUS'");
+        });
+    });
 });

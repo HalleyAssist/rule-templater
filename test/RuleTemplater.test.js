@@ -236,6 +236,18 @@ describe('RuleTemplate', function() {
                 "function 'MissingFunction' does not exist"
             ]);
         });
+
+        it('should detect unknown filters anywhere in a repeated variable chain', function() {
+            const template = 'EventIs(${EVENT_TYPE|upper}) && OtherEvent(${EVENT_TYPE|missing_filter})';
+            const parsed = RuleTemplate.parse(template);
+
+            const result = parsed.validate({
+                EVENT_TYPE: { value: 'test', type: 'string' }
+            });
+
+            expect(result.valid).to.be.false;
+            expect(result.errors).to.deep.include("Unknown filter 'missing_filter' for variable 'EVENT_TYPE'");
+        });
     });
 
     describe('parse() - instance methods', function() {

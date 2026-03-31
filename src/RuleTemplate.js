@@ -297,10 +297,31 @@ class RuleTemplate {
 
         const errors = [];
         const warnings = [];
-        const extractedVars = this.extractVariables();
+        const extractedVars = this._extractTemplateVariables();
+        const seenVariables = new Set();
+        const seenFilterErrors = new Set();
         
         for (const varInfo of extractedVars) {
             const varName = varInfo.name;
+
+            for (const filter of (varInfo.filterCalls || varInfo.filters || [])) {
+                const filterName = typeof filter === 'string' ? filter : filter?.name;
+                if (filterName && TemplateFilters[filterName]) {
+                    continue;
+                }
+
+                const errorMessage = `Unknown filter '${filterName || filter}' for variable '${varName}'`;
+                if (!seenFilterErrors.has(errorMessage)) {
+                    errors.push(errorMessage);
+                    seenFilterErrors.add(errorMessage);
+                }
+            }
+
+            if (seenVariables.has(varName)) {
+                continue;
+            }
+
+            seenVariables.add(varName);
             
             // Check if variable is provided
             if (!variables.hasOwnProperty(varName)) {
@@ -371,6 +392,30 @@ class RuleTemplate {
 
         traverse(this.ast);
         return functionCalls;
+    }
+
+    _extractTemplateVariables() {
+        const variables = [];
+
+        const traverse = (node) => {
+            if (!node) return;
+
+            if (node.type === 'template_value') {
+                const variableInfo = this._extractVariableFromNode(node);
+                if (variableInfo) {
+                    variables.push(variableInfo);
+                }
+            }
+
+            if (node.children) {
+                for (const child of node.children) {
+                    traverse(child);
+                }
+            }
+        };
+
+        traverse(this.ast);
+        return variables;
     }
 
     /**

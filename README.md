@@ -237,7 +237,7 @@ This is useful for comparing against a hub's list of available functions to ensu
 
 ### `ruleTemplate.validate(variables)`
 
-Validates that all required variables are provided and have valid types.
+Validates that all required variables are provided, have valid types, and reference only known template filters.
 
 **Parameters:**
 - `variables` (object): Object mapping variable names to their values and types
@@ -248,6 +248,7 @@ Validates that all required variables are provided and have valid types.
 **Returns:** Object with:
 - `valid` (boolean): Whether validation passed
 - `errors` (array): Array of error messages (empty if valid)
+- `warnings` (array): Array of non-fatal warnings (empty if none)
 
 ### `ruleTemplate.prepare(variables)`
 
@@ -276,6 +277,10 @@ Extracts variables from a general string template.
 ### `generalTemplate.prepare(variables)`
 
 Prepares a general string template by replacing `${...}` placeholders with values and applying filters.
+
+### `generalTemplate.validate()`
+
+Validates the template itself and reports any unknown filters used in `${...}` chains.
 
 ### `RuleTemplate.validateVariableNode(astNode, variableType)` (Static)
 

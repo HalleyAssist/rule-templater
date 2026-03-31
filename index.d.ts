@@ -3,9 +3,14 @@ export interface VariablePosition {
     end: number;
 }
 
+export interface TemplateFilterCall {
+    name: string;
+    args: any[];
+}
+
 export interface VariableInfo {
     name: string;
-    filters: string[];
+    filters: Array<string | TemplateFilterCall>;
     positions: VariablePosition[];
 }
 
@@ -133,6 +138,8 @@ export class GeneralTemplate {
     getVariables(): VariableInfo[];
 
     extractVariables(): VariableInfo[];
+
+    validate(): ValidationResult;
 
     prepare(variables: Variables): string;
 }

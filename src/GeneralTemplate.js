@@ -54,6 +54,33 @@ class GeneralTemplate {
         return this.getVariables();
     }
 
+    validate() {
+        const errors = [];
+        const warnings = [];
+        const seenFilterErrors = new Set();
+
+        for (const variableInfo of this.getVariables()) {
+            for (const filter of variableInfo.filters || []) {
+                const filterName = typeof filter === 'string' ? filter : filter?.name;
+                if (filterName && TemplateFilters[filterName]) {
+                    continue;
+                }
+
+                const errorMessage = `Unknown filter '${filterName || filter}' for variable '${variableInfo.name}'`;
+                if (!seenFilterErrors.has(errorMessage)) {
+                    errors.push(errorMessage);
+                    seenFilterErrors.add(errorMessage);
+                }
+            }
+        }
+
+        return {
+            valid: errors.length === 0,
+            errors,
+            warnings
+        };
+    }
+
     prepare(variables) {
         if (!variables || typeof variables !== 'object') {
             throw new Error('Variables must be provided as an object');
