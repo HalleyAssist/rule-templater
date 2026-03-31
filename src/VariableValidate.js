@@ -207,7 +207,7 @@ class VariableValidate {
             return null;
         }
 
-        return `${value.from.trim()} TO ${value.to.trim()}`;
+        return `BETWEEN ${value.from.trim()} AND ${value.to.trim()}`;
     }
 
     static _serializeTimePeriodAgo(value) {
@@ -224,7 +224,7 @@ class VariableValidate {
             return null;
         }
 
-        return `${value.from.trim()} TO ${value.to.trim()} AGO ${amount} ${unit.trim()}`;
+        return `${amount} ${unit.trim()} AGO BETWEEN ${value.from.trim()} AND ${value.to.trim()}`;
     }
 
     static _serializeNumberTime(value) {
@@ -341,7 +341,7 @@ VariableValidate.validators = Object.freeze({
     'time period': (value) => VariableValidate._validateWithRule(value, 'time_period_atom', {
         normalize: VariableValidate._serializeTimePeriod,
         emptyMessage: 'Time period variables must be objects with string from/to properties',
-        parseMessage: 'Time period variables must serialize to FROM TO TO syntax',
+        parseMessage: 'Time period variables must serialize to BETWEEN FROM AND TO syntax',
         semanticCheck: (rawValue) => {
             const fromError = VariableValidate._validateTimeOfDay(rawValue?.from);
             if (fromError) return `Invalid time period from value: ${fromError}`;
@@ -355,7 +355,7 @@ VariableValidate.validators = Object.freeze({
     'time period ago': (value) => VariableValidate._validateWithRule(value, 'time_period_ago_atom', {
         normalize: VariableValidate._serializeTimePeriodAgo,
         emptyMessage: 'Time period ago variables must be objects with from, to, and ago properties',
-        parseMessage: 'Time period ago variables must serialize to FROM TO TO AGO AMOUNT UNIT syntax',
+        parseMessage: 'Time period ago variables must serialize to AMOUNT UNIT AGO BETWEEN FROM AND TO syntax',
         semanticCheck: (rawValue) => {
             const fromError = VariableValidate._validateTimeOfDay(rawValue?.from);
             if (fromError) return `Invalid time period ago from value: ${fromError}`;

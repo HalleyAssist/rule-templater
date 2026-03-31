@@ -23,18 +23,9 @@ const grammar = `
 
     template_filter_arg  ::= value | template_value
 
-    number_atom          ::= number | template_value
-    number_time_atom     ::= number_time | template_value WS+ unit | template_value
-    tod_atom             ::= number_tod | template_value
-    dow_atom             ::= dow | template_value
-    between_time_only_atom ::= between_time_only | template_value
-    between_tod_only_atom  ::= between_tod_only | template_value
-
     string_atom          ::= string
     boolean_atom         ::= false | true
     time_value_atom      ::= number_tod
-    time_period_atom     ::= time_value_atom WS* "TO" WS* time_value_atom
-    time_period_ago_atom ::= time_value_atom WS* "TO" WS* time_value_atom WS+ AGO WS+ number WS+ unit
 
     object_atom          ::= json_object
     json_value           ::= string | number | false | true | null | json_array | json_object

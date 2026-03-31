@@ -28,7 +28,7 @@ const AllowedTypeMapping = {
     'number': ['number_atom', 'math_expr'],
     'boolean': ['boolean_atom', 'boolean_expr'],
     'time period': ['time_period_atom'],
-    'time period ago': ['time_period_atom'],
+    'time period ago': ['time_period_ago_atom'],
     'time value': ['time_value_atom', 'tod_atom'],
     'number time': ['number_atom'],
     'string array': ['string_array'],
@@ -49,12 +49,71 @@ for(const rule of TemplateGrammar){
     }
 }
 
-// Add template_value as an alternative to value_atom so templates can be parsed
-const valueAtomIdx = extendedGrammar.findIndex(r => r.name === 'value_atom');
-if (valueAtomIdx !== -1) {
-    extendedGrammar[valueAtomIdx] = Object.assign({}, extendedGrammar[valueAtomIdx]);
-    extendedGrammar[valueAtomIdx].bnf = extendedGrammar[valueAtomIdx].bnf.concat([['template_value']]);
-}
+const cloneRule = (ruleName) => {
+    const idx = extendedGrammar.findIndex(rule => rule.name === ruleName);
+    if (idx === -1) {
+        return null;
+    }
+
+    extendedGrammar[idx] = Object.assign({}, extendedGrammar[idx], {
+        bnf: extendedGrammar[idx].bnf.map(alt => Array.isArray(alt) ? alt.slice() : alt)
+    });
+
+    return extendedGrammar[idx];
+};
+
+const appendAlternative = (ruleName, alternative) => {
+    const rule = cloneRule(ruleName);
+    if (!rule) {
+        return;
+    }
+
+    const exists = rule.bnf.some(existing => JSON.stringify(existing) === JSON.stringify(alternative));
+    if (!exists) {
+        rule.bnf.push(alternative);
+    }
+};
+
+const replaceRule = (ruleName, bnf) => {
+    const idx = extendedGrammar.findIndex(rule => rule.name === ruleName);
+    if (idx === -1) {
+        extendedGrammar.push({name: ruleName, bnf});
+        return;
+    }
+
+    extendedGrammar[idx] = Object.assign({}, extendedGrammar[idx], {
+        bnf: bnf.map(alt => alt.slice())
+    });
+};
+
+appendAlternative('number_atom', ['template_value']);
+appendAlternative('number_time_atom', ['template_value', 'WS+', 'unit']);
+appendAlternative('number_time_atom', ['template_value']);
+appendAlternative('tod_atom', ['template_value']);
+appendAlternative('dow_atom', ['template_value']);
+appendAlternative('between_time_only_atom', ['template_value']);
+appendAlternative('between_tod_only_atom', ['template_value']);
+appendAlternative('string_atom', ['template_value']);
+appendAlternative('boolean_atom', ['template_value']);
+appendAlternative('time_value_atom', ['template_value']);
+appendAlternative('time_period_atom', ['template_value']);
+appendAlternative('time_period_ago_atom', ['template_value']);
+appendAlternative('object_atom', ['template_value']);
+appendAlternative('string_array', ['template_value']);
+appendAlternative('number_array', ['template_value']);
+appendAlternative('boolean_array', ['template_value']);
+appendAlternative('object_array', ['template_value']);
+
+replaceRule('argument', [
+    ['number_time_atom', 'WS*'],
+    ['statement', 'WS*']
+]);
+
+replaceRule('simple_result', [
+    ['fcall'],
+    ['number_time_atom'],
+    ['value']
+]);
 
 // Export the parser rules for potential external use
 const ParserRules = extendedGrammar;
@@ -351,6 +410,23 @@ class RuleTemplate {
             }
         }
 
+        const canValidatePreparedRule = errors.length === 0
+            && Array.from(seenVariables).every(varName => {
+                const varData = variables[varName];
+                return varData
+                    && typeof varData === 'object'
+                    && Object.prototype.hasOwnProperty.call(varData, 'type')
+                    && Object.prototype.hasOwnProperty.call(varData, 'value');
+            });
+
+        if (canValidatePreparedRule) {
+            try {
+                RuleParser.toAst(this.prepare(variables));
+            } catch (error) {
+                errors.push(`Prepared rule is invalid: ${error.message}`);
+            }
+        }
+
         if (functionBlob && typeof functionBlob.validate === 'function') {
             for (const functionCall of this._extractFunctionCalls()) {
                 warnings.push(...functionBlob.validate(functionCall.name, functionCall.arguments));
@@ -559,12 +635,12 @@ class RuleTemplate {
             return value ? 'true' : 'false';
         }
 
-        if (type === 'time period' || type === 'time period ago') {
-            let ret = `${value.from} TO ${value.to}`;
-            if(value.ago) {
-                ret += ` AGO ${value.ago[0]} ${value.ago[1]}`;
-            }
-            return ret;
+        if (type === 'time period') {
+            return `BETWEEN ${value.from} AND ${value.to}`;
+        }
+
+        if (type === 'time period ago') {
+            return `${value.ago[0]} ${value.ago[1]} AGO BETWEEN ${value.from} AND ${value.to}`;
         }
 
         if (type === 'object' || type === 'string array' || type === 'number array' || type === 'boolean array' || type === 'object array') {
