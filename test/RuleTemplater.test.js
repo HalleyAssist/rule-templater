@@ -144,6 +144,29 @@ describe('RuleTemplate', function() {
             
             expect(result).to.equal('EventIs("test") && OtherEvent("test")');
         });
+
+        it('should serialize time period variables to BETWEEN expressions', function() {
+            const template = 'SensorActionDuration(HasCapableSensor("bed"), "presence:present", "presence:absent", ${DAY_ALERT_PERIOD})';
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
+                DAY_ALERT_PERIOD: { value: { from: '08:00', to: '17:00' }, type: 'time period' }
+            });
+
+            expect(result).to.equal('SensorActionDuration(HasCapableSensor("bed"), "presence:present", "presence:absent", BETWEEN 08:00 AND 17:00)');
+        });
+
+        it('should serialize time period ago variables using parser-compatible AGO syntax', function() {
+            const template = 'SensorActionDuration(HasCapableSensor("bed"), "presence:present", "presence:absent", ${RECENT_ALERT_PERIOD})';
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
+                RECENT_ALERT_PERIOD: {
+                    value: { from: '08:00', to: '17:00', ago: [2, 'HOURS'] },
+                    type: 'time period ago'
+                }
+            });
+
+            expect(result).to.equal('SensorActionDuration(HasCapableSensor("bed"), "presence:present", "presence:absent", 2 HOURS AGO BETWEEN 08:00 AND 17:00)');
+        });
     });
 
     describe('validate()', function() {
@@ -187,7 +210,7 @@ describe('RuleTemplate', function() {
             expect(result.errors[0]).to.include('Invalid variable type');
         });
 
-        it('should reject time period variables used directly in function arguments', function() {
+        it('should allow time period variables used directly in function arguments', function() {
             const template = 'SensorActionDuration(HasCapableSensor("bed"), "presence:present", "presence:absent", ${DAY_ALERT_PERIOD})';
             const parsed = RuleTemplate.parse(template);
 
@@ -198,10 +221,9 @@ describe('RuleTemplate', function() {
                 }
             });
 
-            expect(result.valid).to.be.false;
-            expect(result.errors).to.deep.equal([
-                'Prepared rule is invalid: Invalid function call syntax.'
-            ]);
+            expect(result.valid).to.be.true;
+            expect(result.errors).to.be.an('array').that.is.empty;
+            expect(result.warnings).to.be.an('array').that.is.empty;
         });
 
         it('should allow time period variables in function arguments when converted to a BETWEEN expression', function() {
@@ -212,6 +234,22 @@ describe('RuleTemplate', function() {
                 DAY_ALERT_PERIOD: {
                     value: { from: '08:00', to: '17:00' },
                     type: 'time period'
+                }
+            });
+
+            expect(result.valid).to.be.true;
+            expect(result.errors).to.be.an('array').that.is.empty;
+            expect(result.warnings).to.be.an('array').that.is.empty;
+        });
+
+        it('should allow time period ago variables used directly in function arguments', function() {
+            const template = 'SensorActionDuration(HasCapableSensor("bed"), "presence:present", "presence:absent", ${RECENT_ALERT_PERIOD})';
+            const parsed = RuleTemplate.parse(template);
+
+            const result = parsed.validate({
+                RECENT_ALERT_PERIOD: {
+                    value: { from: '08:00', to: '17:00', ago: [2, 'HOURS'] },
+                    type: 'time period ago'
                 }
             });
 

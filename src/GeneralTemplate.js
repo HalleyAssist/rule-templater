@@ -190,12 +190,12 @@ class GeneralTemplate {
             return '';
         }
 
-        if (varData.type === 'time period' || varData.type === 'time period ago') {
-            let ret = `${varData.value.from} TO ${varData.value.to}`;
-            if (varData.value.ago) {
-                ret += ` AGO ${varData.value.ago[0]} ${varData.value.ago[1]}`;
-            }
-            return ret;
+        if (varData.type === 'time period') {
+            return `BETWEEN ${varData.value.from} AND ${varData.value.to}`;
+        }
+
+        if (varData.type === 'time period ago') {
+            return `${varData.value.ago[0]} ${varData.value.ago[1]} AGO BETWEEN ${varData.value.from} AND ${varData.value.to}`;
         }
 
         return String(varData.value);

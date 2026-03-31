@@ -13,6 +13,7 @@ const VariableTypes = [
     'boolean',
     'object',
     'time period',
+    'time period ago',
     'time value',
     'string array',
     'number array',
@@ -25,6 +26,7 @@ const AllowedTypeMapping = {
     'number': ['number_atom', 'math_expr'],
     'boolean': ['boolean_atom', 'boolean_expr'],
     'time period': ['time_period_atom'],
+    'time period ago': ['time_period_ago_atom'],
     'time value': ['time_value_atom', 'tod_atom'],
     'string array': ['string_array'],
     'number array': ['number_array'],
@@ -42,12 +44,6 @@ for(const rule of TemplateGrammar){
     } else {
         extendedGrammar.push(rule);
     }
-}
-
-// Add template_value as an alternative to value_atom so templates can be parsed
-const valueAtomIdx = extendedGrammar.findIndex(r => r.name === 'value_atom');
-if (valueAtomIdx !== -1) {
-    extendedGrammar[valueAtomIdx].bnf.push(['template_value']);
 }
 
 // Export the parser rules for potential external use
@@ -374,6 +370,10 @@ class RuleTemplate {
             return String(value);
         } else if (type === 'boolean') {
             return value ? 'true' : 'false';
+        } else if (type === 'time period') {
+            return `BETWEEN ${value.from} AND ${value.to}`;
+        } else if (type === 'time period ago') {
+            return `${value.ago[0]} ${value.ago[1]} AGO BETWEEN ${value.from} AND ${value.to}`;
         } else {
             // Default behavior - just insert the value as-is
             return String(value);

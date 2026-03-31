@@ -54,6 +54,32 @@ describe('VariableValidate', function() {
         expect(result.error).to.include('from, to, and ago');
     });
 
+    it('accepts BETWEEN-based prepared time period output through parser validation', function() {
+        const parsed = RuleTemplate.parse('WindowCheck(${WINDOW})');
+        const result = parsed.validate({
+            WINDOW: {
+                value: { from: '08:00', to: '12:00' },
+                type: 'time period'
+            }
+        });
+
+        expect(result.valid).to.equal(true);
+        expect(result.errors).to.deep.equal([]);
+    });
+
+    it('accepts AGO BETWEEN prepared time period output through parser validation', function() {
+        const parsed = RuleTemplate.parse('WindowCheck(${WINDOW})');
+        const result = parsed.validate({
+            WINDOW: {
+                value: { from: '08:00', to: '12:00', ago: [2, 'HOURS'] },
+                type: 'time period ago'
+            }
+        });
+
+        expect(result.valid).to.equal(true);
+        expect(result.errors).to.deep.equal([]);
+    });
+
     it('rejects non-json object values', function() {
         const result = VariableValidate.validateValue('object', {
             nested: undefined

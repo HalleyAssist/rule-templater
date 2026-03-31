@@ -28,7 +28,7 @@ const AllowedTypeMapping = {
     'number': ['number_atom', 'math_expr'],
     'boolean': ['boolean_atom', 'boolean_expr'],
     'time period': ['time_period_atom'],
-    'time period ago': ['time_period_atom'],
+    'time period ago': ['time_period_ago_atom'],
     'time value': ['time_value_atom', 'tod_atom'],
     'number time': ['number_atom'],
     'string array': ['string_array'],
@@ -47,13 +47,6 @@ for(const rule of TemplateGrammar){
     } else {
         extendedGrammar.push(rule);
     }
-}
-
-// Add template_value as an alternative to value_atom so templates can be parsed
-const valueAtomIdx = extendedGrammar.findIndex(r => r.name === 'value_atom');
-if (valueAtomIdx !== -1) {
-    extendedGrammar[valueAtomIdx] = Object.assign({}, extendedGrammar[valueAtomIdx]);
-    extendedGrammar[valueAtomIdx].bnf = extendedGrammar[valueAtomIdx].bnf.concat([['template_value']]);
 }
 
 // Export the parser rules for potential external use
@@ -567,12 +560,12 @@ class RuleTemplate {
             return value ? 'true' : 'false';
         }
 
-        if (type === 'time period' || type === 'time period ago') {
-            let ret = `${value.from} TO ${value.to}`;
-            if(value.ago) {
-                ret += ` AGO ${value.ago[0]} ${value.ago[1]}`;
-            }
-            return ret;
+        if (type === 'time period') {
+            return `BETWEEN ${value.from} AND ${value.to}`;
+        }
+
+        if (type === 'time period ago') {
+            return `${value.ago[0]} ${value.ago[1]} AGO BETWEEN ${value.from} AND ${value.to}`;
         }
 
         if (type === 'object' || type === 'string array' || type === 'number array' || type === 'boolean array' || type === 'object array') {
