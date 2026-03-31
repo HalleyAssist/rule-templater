@@ -393,6 +393,46 @@ describe('RuleTemplate', function() {
             expect(result).to.equal('EventIs("already-human")');
         });
 
+        it('should humanise exact time values', function() {
+            const template = 'EventIs(${DURATION|humanise_time|string})';
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
+                DURATION: { value: 3600, type: 'number' }
+            });
+
+            expect(result).to.equal('EventIs("1 hour")');
+        });
+
+        it('should keep seconds when no exact larger unit exists', function() {
+            const template = 'EventIs(${DURATION|humanise_time|string})';
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
+                DURATION: { value: 71, type: 'number' }
+            });
+
+            expect(result).to.equal('EventIs("71 seconds")');
+        });
+
+        it('should round down to the provided minimum unit', function() {
+            const template = 'EventIs(${DURATION|humanise_time("minute")|string})';
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
+                DURATION: { value: 71, type: 'number' }
+            });
+
+            expect(result).to.equal('EventIs("1 minute")');
+        });
+
+        it('should accept minimum unit aliases for humanise_time', function() {
+            const template = 'EventIs(${DURATION|humanise_time("min")|string})';
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
+                DURATION: { value: 71, type: 'number' }
+            });
+
+            expect(result).to.equal('EventIs("1 minute")');
+        });
+
         it('should apply number filter', function() {
             const template = 'Value() > ${THRESHOLD|number}';
             const parsed = RuleTemplate.parse(template);

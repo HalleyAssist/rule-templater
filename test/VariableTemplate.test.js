@@ -66,6 +66,19 @@ describe('VariableTemplate', function() {
             });
         });
 
+        it('should apply humanise_time with a minimum unit argument', function() {
+            const parsed = VariableTemplate.parse('DURATION|humanise_time("min")');
+            const result = parsed.format({
+                value: 71,
+                type: 'number'
+            });
+
+            expect(result).to.deep.equal({
+                value: '1 minute',
+                type: 'string'
+            });
+        });
+
         it('should throw for unknown filters', function() {
             const parsed = VariableTemplate.parse('NAME|unknown_filter');
 

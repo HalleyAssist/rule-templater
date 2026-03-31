@@ -122,6 +122,7 @@ const prepared = parsed.prepare({
 - **floor**: Round number down
 - **ceil**: Round number up
 - **humanise_list**: Join array values into natural language, optionally with a custom joiner like `humanise_list("or")`
+- **humanise_time**: Convert seconds into a single human-readable unit like `1 hour`; optionally round down to a minimum unit such as `humanise_time("minute")` or `humanise_time("min")`
 - **time_start**: Extract `from` from `time period` / `time period ago` and convert to `time value`
 - **time_end**: Extract `to` from `time period` / `time period ago` and convert to `time value`
 
@@ -144,6 +145,10 @@ const prepared = parsed.prepare({
 // Humanise arrays
 '${names|humanise_list}' with names=['a','b','c'] → a, b and c
 '${names|humanise_list("or")}' with names=['a','b','c'] → a, b or c
+
+// Humanise time from seconds
+'${duration|humanise_time}' with duration=3600 → 1 hour
+'${duration|humanise_time("minute")}' with duration=71 → 1 minute
 
 // Time period conversion
 '${window|time_start}' with window={from:'08:00',to:'12:00'} → 08:00

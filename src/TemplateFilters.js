@@ -2,6 +2,31 @@
 Template filters are functions that transform variable values.
 They are applied in the template syntax as ${variable|filter} or ${variable|filter1|filter2}
 */
+const HUMANISE_TIME_UNITS = [
+    { name: 'year', seconds: 31536000, aliases: ['year', 'years', 'yr', 'yrs', 'y'] },
+    { name: 'month', seconds: 2592000, aliases: ['month', 'months', 'mo', 'mos'] },
+    { name: 'week', seconds: 604800, aliases: ['week', 'weeks', 'wk', 'wks', 'w'] },
+    { name: 'day', seconds: 86400, aliases: ['day', 'days', 'd'] },
+    { name: 'hour', seconds: 3600, aliases: ['hour', 'hours', 'hr', 'hrs', 'h'] },
+    { name: 'minute', seconds: 60, aliases: ['minute', 'minutes', 'min', 'mins'] },
+    { name: 'second', seconds: 1, aliases: ['second', 'seconds', 'sec', 'secs', 's'] }
+];
+
+const getHumaniseTimeUnit = minUnit => {
+    if (minUnit === null || minUnit === undefined || minUnit === '') {
+        return null;
+    }
+
+    const normalizedMinUnit = String(minUnit).trim().toLowerCase();
+    const unit = HUMANISE_TIME_UNITS.find(candidate => candidate.aliases.includes(normalizedMinUnit));
+
+    if (!unit) {
+        throw new Error(`Unknown humanise_time min_unit \"${minUnit}\"`);
+    }
+
+    return unit;
+};
+
 const TemplateFilters = {
     // Convert value to JSON string representation
     string: varData => {
@@ -149,6 +174,41 @@ const TemplateFilters = {
             varData.value = `${items.slice(0, -1).join(', ')} ${joiner} ${items[items.length - 1]}`;
         }
 
+        varData.type = 'string';
+
+    },
+
+    humanise_time: (varData, minUnit = null) => {
+        const rawSeconds = Number(varData.value);
+
+        if (isNaN(rawSeconds)) {
+            throw new Error(`Value "${varData.value}" cannot be converted to seconds`);
+        }
+
+        const isNegative = rawSeconds < 0;
+        const absoluteSeconds = Math.abs(rawSeconds);
+        const minimumUnit = getHumaniseTimeUnit(minUnit);
+        const minimumUnitIndex = minimumUnit
+            ? HUMANISE_TIME_UNITS.findIndex(unit => unit.name === minimumUnit.name)
+            : HUMANISE_TIME_UNITS.length - 1;
+        const candidateUnits = HUMANISE_TIME_UNITS.slice(0, minimumUnitIndex + 1);
+        let selectedUnit = candidateUnits.find(unit => absoluteSeconds % unit.seconds === 0);
+        let quantity;
+
+        if (selectedUnit) {
+            quantity = absoluteSeconds / selectedUnit.seconds;
+        } else if (minimumUnit) {
+            selectedUnit = minimumUnit;
+            quantity = Math.floor(absoluteSeconds / selectedUnit.seconds);
+        } else {
+            selectedUnit = HUMANISE_TIME_UNITS[HUMANISE_TIME_UNITS.length - 1];
+            quantity = absoluteSeconds;
+        }
+
+        const signedQuantity = isNegative ? -quantity : quantity;
+        const label = Math.abs(signedQuantity) === 1 ? selectedUnit.name : `${selectedUnit.name}s`;
+
+        varData.value = `${signedQuantity} ${label}`;
         varData.type = 'string';
 
     },
