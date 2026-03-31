@@ -139,12 +139,15 @@ class VariableValidate {
             throw new Error('Variable data filters must be an array');
         }
 
-        for (const filterName of normalizedVarData.filters) {
-            if (!TemplateFilters[filterName]) {
-                throw new Error(`Unknown filter '${filterName}'`);
+        for (const filter of normalizedVarData.filters) {
+            const filterName = typeof filter === 'string' ? filter : filter?.name;
+            const filterArgs = typeof filter === 'string' ? [] : (Array.isArray(filter?.args) ? filter.args : []);
+
+            if (!filterName || !TemplateFilters[filterName]) {
+                throw new Error(`Unknown filter '${filterName || filter}'`);
             }
 
-            TemplateFilters[filterName](normalizedVarData);
+            TemplateFilters[filterName](normalizedVarData, ...filterArgs);
         }
 
         return normalizedVarData;

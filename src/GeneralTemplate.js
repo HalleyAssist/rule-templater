@@ -1,5 +1,7 @@
 const TemplateFilters = require('./TemplateFilters');
 
+const FILTER_PATTERN = /([A-Za-z_][A-Za-z0-9_]*)(?:\((.*)\))?$/;
+
 class GeneralTemplate {
     constructor(templateText) {
         this.templateText = templateText;
@@ -76,12 +78,15 @@ class GeneralTemplate {
             varData = Object.assign({}, varData);
 
             if (parsedExpression.filters && parsedExpression.filters.length > 0) {
-                for (const filterName of parsedExpression.filters) {
-                    if (!TemplateFilters[filterName]) {
-                        throw new Error(`Unknown filter '${filterName}'`);
+                for (const filter of parsedExpression.filters) {
+                    const filterName = typeof filter === 'string' ? filter : filter?.name;
+                    const filterArgs = typeof filter === 'string' ? [] : (Array.isArray(filter?.args) ? filter.args : []);
+
+                    if (!filterName || !TemplateFilters[filterName]) {
+                        throw new Error(`Unknown filter '${filterName || filter}'`);
                     }
 
-                    TemplateFilters[filterName](varData);
+                    TemplateFilters[filterName](varData, ...filterArgs);
                 }
             }
 
@@ -101,8 +106,56 @@ class GeneralTemplate {
 
         return {
             name: segments[0],
-            filters: segments.slice(1)
+            filters: segments.slice(1).map(segment => this._parseFilter(segment))
         };
+    }
+
+    _parseFilter(segment) {
+        const match = segment.match(FILTER_PATTERN);
+        if (!match) {
+            return {
+                name: segment,
+                args: []
+            };
+        }
+
+        const [, name, rawArgs] = match;
+        return {
+            name,
+            args: this._parseFilterArgs(rawArgs)
+        };
+    }
+
+    _parseFilterArgs(rawArgs) {
+        if (!rawArgs || !rawArgs.trim()) {
+            return [];
+        }
+
+        return rawArgs.split(',').map(arg => this._parseFilterArgValue(arg.trim()));
+    }
+
+    _parseFilterArgValue(rawArg) {
+        if ((rawArg.startsWith('"') && rawArg.endsWith('"')) || (rawArg.startsWith("'") && rawArg.endsWith("'"))) {
+            return rawArg.slice(1, -1);
+        }
+
+        if (rawArg === 'true') {
+            return true;
+        }
+
+        if (rawArg === 'false') {
+            return false;
+        }
+
+        if (rawArg === 'null') {
+            return null;
+        }
+
+        if (rawArg !== '' && !Number.isNaN(Number(rawArg))) {
+            return Number(rawArg);
+        }
+
+        return rawArg;
     }
 
     _serializeVariable(varData) {

@@ -351,6 +351,36 @@ describe('RuleTemplate', function() {
             expect(result).to.equal('EventIs("test-event")');
         });
 
+        it('should humanise array values with the default joiner', function() {
+            const template = 'EventIs(${EVENTS|humanise_list|string})';
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
+                EVENTS: { value: ['a', 'b', 'c'], type: 'string array' }
+            });
+
+            expect(result).to.equal('EventIs("a, b and c")');
+        });
+
+        it('should humanise array values with a custom joiner', function() {
+            const template = 'EventIs(${EVENTS|humanise_list("or")|string})';
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
+                EVENTS: { value: ['a', 'b', 'c'], type: 'string array' }
+            });
+
+            expect(result).to.equal('EventIs("a, b or c")');
+        });
+
+        it('should return string values unchanged for humanise_list', function() {
+            const template = 'EventIs(${EVENTS|humanise_list|string})';
+            const parsed = RuleTemplate.parse(template);
+            const result = parsed.prepare({
+                EVENTS: { value: 'already-human', type: 'string' }
+            });
+
+            expect(result).to.equal('EventIs("already-human")');
+        });
+
         it('should apply number filter', function() {
             const template = 'Value() > ${THRESHOLD|number}';
             const parsed = RuleTemplate.parse(template);
@@ -496,6 +526,17 @@ describe('RuleTemplate', function() {
                 EVENT: { value: 'test', type: 'string' }
             });
             expect(result).to.equal('EventIs("test")');
+        });
+
+        it('should apply default filter arguments', function() {
+            const template = 'EventIs(${EVENT|default("fallback")})';
+            const parsed = RuleTemplate.parse(template);
+
+            const result = parsed.prepare({
+                EVENT: { value: '', type: 'string' }
+            });
+
+            expect(result).to.equal('EventIs("fallback")');
         });
 
         it('should extract start time from time period with time_start filter', function() {

@@ -121,6 +121,7 @@ const prepared = parsed.prepare({
 - **round**: Round number to nearest integer
 - **floor**: Round number down
 - **ceil**: Round number up
+- **humanise_list**: Join array values into natural language, optionally with a custom joiner like `humanise_list("or")`
 - **time_start**: Extract `from` from `time period` / `time period ago` and convert to `time value`
 - **time_end**: Extract `to` from `time period` / `time period ago` and convert to `time value`
 
@@ -139,6 +140,10 @@ const prepared = parsed.prepare({
 
 // Chaining filters
 '${text|trim|upper}' with text='  hello  ' → HELLO
+
+// Humanise arrays
+'${names|humanise_list}' with names=['a','b','c'] → a, b and c
+'${names|humanise_list("or")}' with names=['a','b','c'] → a, b or c
 
 // Time period conversion
 '${window|time_start}' with window={from:'08:00',to:'12:00'} → 08:00

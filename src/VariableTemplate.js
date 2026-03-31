@@ -37,7 +37,7 @@ class VariableTemplate {
     extractVariable() {
         return {
             name: this.variable.name,
-            filters: this.variable.filters.slice()
+            filters: this.variable.filters.map(filter => filter.name)
         };
     }
 
@@ -62,12 +62,15 @@ class VariableTemplate {
 
         varData = VariableTemplate._cloneVarData(varData);
 
-        for (const filterName of this.variable.filters) {
-            if (!TemplateFilters[filterName]) {
-                throw new Error(`Unknown filter '${filterName}'`);
+        for (const filter of this.variable.filters) {
+            const filterName = typeof filter === 'string' ? filter : filter?.name;
+            const filterArgs = typeof filter === 'string' ? [] : (Array.isArray(filter?.args) ? filter.args : []);
+
+            if (!filterName || !TemplateFilters[filterName]) {
+                throw new Error(`Unknown filter '${filterName || filter}'`);
             }
 
-            TemplateFilters[filterName](varData);
+            TemplateFilters[filterName](varData, ...filterArgs);
         }
 
         return varData;
@@ -98,7 +101,11 @@ class VariableTemplate {
                 const filterNameNode = child.children?.find(c => c.type === 'template_filter_name');
                 const filterName = filterNameNode?.text?.trim();
                 if (filterName) {
-                    filters.push(filterName);
+                    const argsNode = child.children?.find(c => c.type === 'template_filter_args');
+                    filters.push({
+                        name: filterName,
+                        args: VariableTemplate._extractFilterArgs(argsNode)
+                    });
                 }
             }
         }
@@ -120,6 +127,67 @@ class VariableTemplate {
         }
 
         return cloned;
+    }
+
+    static _extractFilterArgs(node) {
+        if (!node || !Array.isArray(node.children)) {
+            return [];
+        }
+
+        return node.children
+            .filter(child => child.type === 'template_filter_arg')
+            .map(child => VariableTemplate._extractFilterArgValue(child));
+    }
+
+    static _extractFilterArgValue(node) {
+        if (!node || !Array.isArray(node.children) || node.children.length === 0) {
+            return VariableTemplate._normalizeFilterArgText(node?.text?.trim() || '');
+        }
+
+        const child = node.children[0];
+        if (!child) {
+            return VariableTemplate._normalizeFilterArgText(node.text?.trim() || '');
+        }
+
+        if (child.type === 'value' && Array.isArray(child.children) && child.children.length > 0) {
+            return VariableTemplate._extractFilterArgValue(child);
+        }
+
+        if (child.type === 'string') {
+            try {
+                return JSON.parse(child.text);
+            } catch (error) {
+                return VariableTemplate._normalizeFilterArgText(child.text);
+            }
+        }
+
+        if (child.type === 'number') {
+            return Number(child.text);
+        }
+
+        if (child.type === 'true') {
+            return true;
+        }
+
+        if (child.type === 'false') {
+            return false;
+        }
+
+        if (child.type === 'null') {
+            return null;
+        }
+
+        return VariableTemplate._normalizeFilterArgText(child.text?.trim() || node.text?.trim() || '');
+    }
+
+    static _normalizeFilterArgText(text) {
+        const normalizedText = String(text).trim();
+
+        if ((normalizedText.startsWith('"') && normalizedText.endsWith('"')) || (normalizedText.startsWith("'") && normalizedText.endsWith("'"))) {
+            return normalizedText.slice(1, -1);
+        }
+
+        return normalizedText;
     }
 }
 

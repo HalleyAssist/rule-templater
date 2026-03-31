@@ -10,7 +10,10 @@ describe('GeneralTemplate', function() {
             expect(variables).to.be.an('array');
             expect(variables).to.have.length(1);
             expect(variables[0].name).to.equal('ALERT_PERIOD');
-            expect(variables[0].filters).to.deep.equal(['time_start', 'time_end']);
+            expect(variables[0].filters).to.deep.equal([
+                { name: 'time_start', args: [] },
+                { name: 'time_end', args: [] }
+            ]);
             expect(variables[0].positions).to.have.length(2);
         });
 
@@ -19,9 +22,9 @@ describe('GeneralTemplate', function() {
             const variables = GeneralTemplate.getVariables(template);
 
             expect(variables.map(v => v.name)).to.deep.equal(['NAME', 'COUNT', 'ACTIVE']);
-            expect(variables.find(v => v.name === 'NAME').filters).to.deep.equal(['trim']);
+            expect(variables.find(v => v.name === 'NAME').filters).to.deep.equal([{ name: 'trim', args: [] }]);
             expect(variables.find(v => v.name === 'COUNT').filters).to.deep.equal([]);
-            expect(variables.find(v => v.name === 'ACTIVE').filters).to.deep.equal(['boolean']);
+            expect(variables.find(v => v.name === 'ACTIVE').filters).to.deep.equal([{ name: 'boolean', args: [] }]);
         });
     });
 

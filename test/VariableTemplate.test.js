@@ -53,6 +53,19 @@ describe('VariableTemplate', function() {
             });
         });
 
+        it('should apply filters with arguments', function() {
+            const parsed = VariableTemplate.parse('NAMES|humanise_list("or")');
+            const result = parsed.format({
+                value: ['alice', 'bob', 'charlie'],
+                type: 'string array'
+            });
+
+            expect(result).to.deep.equal({
+                value: 'alice, bob or charlie',
+                type: 'string'
+            });
+        });
+
         it('should throw for unknown filters', function() {
             const parsed = VariableTemplate.parse('NAME|unknown_filter');
 

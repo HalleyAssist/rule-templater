@@ -185,11 +185,13 @@ class RuleTemplate {
         
         // Extract filters
         const filters = [];
+        const filterCalls = [];
         for (const child of templateExpr.children || []) {
             if (child.type === 'template_filter_call') {
-                const filterName = this._extractFilterName(child);
-                if (filterName) {
-                    filters.push(filterName);
+                const filterCall = this._extractFilterCall(child);
+                if (filterCall) {
+                    filters.push(filterCall.name);
+                    filterCalls.push(filterCall);
                 }
             }
         }
@@ -198,18 +200,84 @@ class RuleTemplate {
         const start = node.start;
         const end = node.end;
         
-        return { name, filters, start, end };
+        return { name, filters, filterCalls, start, end };
     }
 
     /**
-     * Extract filter name from template_filter_call node
+     * Extract filter call from template_filter_call node
      * @private
      */
-    _extractFilterName(node) {
+    _extractFilterCall(node) {
         const filterNameNode = node.children?.find(c => c.type === 'template_filter_name');
         if (!filterNameNode || !filterNameNode.text) return null;
-        
-        return filterNameNode.text.trim();
+
+        const argsNode = node.children?.find(c => c.type === 'template_filter_args');
+
+        return {
+            name: filterNameNode.text.trim(),
+            args: this._extractFilterArgs(argsNode)
+        };
+    }
+
+    _extractFilterArgs(node) {
+        if (!node || !Array.isArray(node.children)) {
+            return [];
+        }
+
+        return node.children
+            .filter(child => child.type === 'template_filter_arg')
+            .map(child => this._extractFilterArgValue(child));
+    }
+
+    _extractFilterArgValue(node) {
+        if (!node || !Array.isArray(node.children) || node.children.length === 0) {
+            return this._normalizeFilterArgText(node?.text?.trim() || '');
+        }
+
+        const child = node.children[0];
+        if (!child) {
+            return this._normalizeFilterArgText(node.text?.trim() || '');
+        }
+
+        if (child.type === 'value' && Array.isArray(child.children) && child.children.length > 0) {
+            return this._extractFilterArgValue(child);
+        }
+
+        if (child.type === 'string') {
+            try {
+                return JSON.parse(child.text);
+            } catch (error) {
+                return this._normalizeFilterArgText(child.text);
+            }
+        }
+
+        if (child.type === 'number') {
+            return Number(child.text);
+        }
+
+        if (child.type === 'true') {
+            return true;
+        }
+
+        if (child.type === 'false') {
+            return false;
+        }
+
+        if (child.type === 'null') {
+            return null;
+        }
+
+        return this._normalizeFilterArgText(child.text?.trim() || node.text?.trim() || '');
+    }
+
+    _normalizeFilterArgText(text) {
+        const normalizedText = String(text).trim();
+
+        if ((normalizedText.startsWith('"') && normalizedText.endsWith('"')) || (normalizedText.startsWith("'") && normalizedText.endsWith("'"))) {
+            return normalizedText.slice(1, -1);
+        }
+
+        return normalizedText;
     }
 
     /**
@@ -407,12 +475,15 @@ class RuleTemplate {
         
         // Apply filters if present
         if (templateInfo.filters && templateInfo.filters.length > 0) {
-            for (const filterName of templateInfo.filters) {
-                if (!TemplateFilters[filterName]) {
-                    throw new Error(`Unknown filter '${filterName}'`);
+            for (const filter of (templateInfo.filterCalls || templateInfo.filters)) {
+                const filterName = typeof filter === 'string' ? filter : filter?.name;
+                const filterArgs = typeof filter === 'string' ? [] : (Array.isArray(filter?.args) ? filter.args : []);
+
+                if (!filterName || !TemplateFilters[filterName]) {
+                    throw new Error(`Unknown filter '${filterName || filter}'`);
                 }
-               
-                TemplateFilters[filterName](varData);
+
+                TemplateFilters[filterName](varData, ...filterArgs);
             }
         }
 

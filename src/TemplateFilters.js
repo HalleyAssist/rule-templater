@@ -125,6 +125,34 @@ const TemplateFilters = {
 
     },
 
+    humanise_list: (varData, joiner = 'and') => {
+        if (typeof varData.value === 'string') {
+            varData.type = 'string';
+            return;
+        }
+
+        if (!Array.isArray(varData.value)) {
+            varData.value = String(varData.value);
+            varData.type = 'string';
+            return;
+        }
+
+        const items = varData.value.map(item => String(item));
+
+        if (items.length === 0) {
+            varData.value = '';
+        } else if (items.length === 1) {
+            [varData.value] = items;
+        } else if (items.length === 2) {
+            varData.value = `${items[0]} ${joiner} ${items[1]}`;
+        } else {
+            varData.value = `${items.slice(0, -1).join(', ')} ${joiner} ${items[items.length - 1]}`;
+        }
+
+        varData.type = 'string';
+
+    },
+
     // Extract start time from time period/time period ago as time value
     time_start: varData => {
         if (varData.type === 'time period' || varData.type === 'time period ago') {
