@@ -410,7 +410,16 @@ class RuleTemplate {
             }
         }
 
-        if (errors.length === 0) {
+        const canValidatePreparedRule = errors.length === 0
+            && Array.from(seenVariables).every(varName => {
+                const varData = variables[varName];
+                return varData
+                    && typeof varData === 'object'
+                    && Object.prototype.hasOwnProperty.call(varData, 'type')
+                    && Object.prototype.hasOwnProperty.call(varData, 'value');
+            });
+
+        if (canValidatePreparedRule) {
             try {
                 RuleParser.toAst(this.prepare(variables));
             } catch (error) {

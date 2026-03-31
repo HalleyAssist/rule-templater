@@ -210,6 +210,32 @@ describe('RuleTemplate', function() {
             expect(result.errors[0]).to.include('Invalid variable type');
         });
 
+        it('should allow validate() to accept partial variable metadata without prepare-time errors', function() {
+            const template = 'EventIs(${EVENT})';
+            const parsed = RuleTemplate.parse(template);
+
+            const result = parsed.validate({
+                EVENT: {}
+            });
+
+            expect(result.valid).to.be.true;
+            expect(result.errors).to.be.an('array').that.is.empty;
+            expect(result.warnings).to.be.an('array').that.is.empty;
+        });
+
+        it('should allow validate() to accept value-only variable metadata without prepare-time errors', function() {
+            const template = 'EventIs(${EVENT})';
+            const parsed = RuleTemplate.parse(template);
+
+            const result = parsed.validate({
+                EVENT: { value: 'test' }
+            });
+
+            expect(result.valid).to.be.true;
+            expect(result.errors).to.be.an('array').that.is.empty;
+            expect(result.warnings).to.be.an('array').that.is.empty;
+        });
+
         it('should allow time period variables used directly in function arguments', function() {
             const template = 'SensorActionDuration(HasCapableSensor("bed"), "presence:present", "presence:absent", ${DAY_ALERT_PERIOD})';
             const parsed = RuleTemplate.parse(template);
