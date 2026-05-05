@@ -165,9 +165,9 @@ const TemplateFilters = {
         const items = varData.value.map(item => String(item));
 
         if (items.length === 0) {
-            varData.value = '';
+            varData.value = 'N/A';
         } else if (items.length === 1) {
-            [varData.value] = items;
+            varData.value = items[0];
         } else if (items.length === 2) {
             varData.value = `${items[0]} ${joiner} ${items[1]}`;
         } else {
