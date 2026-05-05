@@ -151,11 +151,6 @@ const TemplateFilters = {
     },
 
     humanise_list: (varData, joiner = 'and') => {
-        if (typeof varData.value === 'string') {
-            varData.type = 'string';
-            return;
-        }
-
         if (!Array.isArray(varData.value)) {
             varData.value = String(varData.value);
             varData.type = 'string';
