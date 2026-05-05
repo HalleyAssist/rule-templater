@@ -26,7 +26,7 @@ const AllowedTypeMapping = {
     'number': ['number_atom', 'math_expr'],
     'boolean': ['boolean_atom', 'boolean_expr'],
     'time period': ['time_period_atom'],
-    'time period ago': ['time_period_ago_atom'],
+    'time period ago': ['time_period_ago_atom', 'time_period_atom'],
     'time value': ['time_value_atom', 'tod_atom'],
     'string array': ['string_array'],
     'number array': ['number_array'],
@@ -93,8 +93,6 @@ appendAlternative('between_tod_only_atom', ['template_value']);
 appendAlternative('string_atom', ['template_value']);
 appendAlternative('boolean_atom', ['template_value']);
 appendAlternative('time_value_atom', ['template_value']);
-appendAlternative('time_period_atom', ['template_value']);
-appendAlternative('time_period_ago_atom', ['template_value']);
 appendAlternative('object_atom', ['template_value']);
 appendAlternative('string_array', ['template_value']);
 appendAlternative('number_array', ['template_value']);
@@ -108,8 +106,8 @@ replaceRule('argument', [
 
 replaceRule('simple_result', [
     ['fcall'],
-    ['number_time_atom'],
-    ['value']
+    ['value'],
+    ['number_time_atom']
 ]);
 
 // Export the parser rules for potential external use

@@ -80,6 +80,19 @@ describe('VariableValidate', function() {
         expect(result.errors).to.deep.equal([]);
     });
 
+    it('accepts number time output in AGO expressions through parser validation', function() {
+        const parsed = RuleTemplate.parse('A() > ${ALERT_TIME} AGO');
+        const result = parsed.validate({
+            ALERT_TIME: {
+                value: '15 minutes',
+                type: 'number time'
+            }
+        });
+
+        expect(result.valid).to.equal(true);
+        expect(result.errors).to.deep.equal([]);
+    });
+
     it('rejects non-json object values', function() {
         const result = VariableValidate.validateValue('object', {
             nested: undefined
